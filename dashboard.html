@@ -1,391 +1,317 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Dashboard de Ventas</title>
+  <title>Informe de ventas</title>
   <style>
-    :root{
-      --bg:#f4f7fb; --panel:#ffffff; --panel-2:#edf4fb; --line:#d8e1ec;
-      --text:#17324d; --muted:#60748a; --accent:#1677c8; --green:#23845b;
-      --amber:#b27612; --red:#bd4051; --shadow:0 10px 28px rgba(29,62,92,.08);
-      --radius:12px;
-    }
-    *{box-sizing:border-box}
-    body{
-      margin:0; font-family:Georgia, 'Times New Roman', serif; color:var(--text);
-      background:linear-gradient(135deg, #f7fbff 0%, var(--bg) 55%, #e9f2f8 100%);
-      min-height:100vh;
-    }
-    .wrap{max-width:1440px; margin:0 auto; padding:28px}
-    .topbar{display:flex; justify-content:space-between; gap:16px; align-items:flex-start; flex-wrap:wrap; margin-bottom:22px}
-    h1{margin:0; font-size:34px; letter-spacing:-.04em}
-    .sub{margin:6px 0 0; color:var(--muted)}
-    .controls{display:flex; gap:10px; flex-wrap:wrap}
-    select{border:1px solid var(--line); background:var(--panel); color:var(--text); border-radius:8px; padding:10px 12px; font:inherit; min-width:132px}
-    .chip, button{
-      border:1px solid var(--line); background:var(--panel); color:var(--text);
-      border-radius:8px; padding:10px 12px; font:inherit
-    }
-    button{background:var(--accent); color:#fff; font-weight:700; border:none}
-    .kpis{display:grid; grid-template-columns:repeat(6, minmax(0,1fr)); gap:16px; margin-bottom:16px}
-    .card{
-      background:var(--panel);
-      border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow)
-    }
-    .kpi{padding:18px; position:relative; overflow:hidden}
-    .kpi::after{content:""; position:absolute; inset:auto -30px -40px auto; width:110px; height:110px; border-radius:50%; background:rgba(93,214,255,.08)}
-    .kpi label{display:block; color:var(--muted); font-size:13px; margin-bottom:10px}
-    .kpi strong{display:block; font-size:28px; letter-spacing:-.04em; position:relative; z-index:1}
-    .kpi-comparison{display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:10px; margin-top:16px; position:relative; z-index:1}
-    .kpi-comparison span{display:block; color:var(--muted); font-size:11px; margin-bottom:4px}
-    .kpi-comparison strong{font-size:16px; letter-spacing:-.02em}
-    .trend{margin-top:10px; font-size:13px; color:var(--green); position:relative; z-index:1}
-    .summary-grid{display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:16px; margin-bottom:16px}
-    .summary-card{padding:18px}
-    .summary-label{font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted)}
-    .summary-value{font-size:24px; font-weight:700; letter-spacing:-.04em; margin-top:14px}
-    .summary-helper{margin-top:8px; color:var(--muted); font-size:13px}
-    .grid{display:grid; grid-template-columns:2fr 1fr; gap:16px; margin-bottom:16px}
-    .panel{padding:18px}
-    .head{display:flex; justify-content:space-between; gap:12px; align-items:flex-start; margin-bottom:16px}
-    .head h2{margin:0; font-size:18px}
-    .head p{margin:4px 0 0; color:var(--muted); font-size:13px}
-    .bars{display:grid; grid-template-columns:repeat(12, 1fr); gap:10px; align-items:end; min-height:300px}
-    .bar-item{display:grid; gap:8px; justify-items:center}
-    .bar{
-      width:100%; min-height:20px; border-radius:14px 14px 10px 10px;
-      background:linear-gradient(180deg, #3a9bdd, #1677c8); box-shadow:0 8px 18px rgba(22,119,200,.18)
-    }
-    .bar-label{color:var(--muted); font-size:12px}
-    .side{display:grid; gap:16px}
-    .legend{display:grid; gap:12px}
-    .donut{width:150px; height:150px; border-radius:50%; margin:4px auto 16px; position:relative}
-    .donut::after{content:""; position:absolute; inset:29%; background:var(--panel); border-radius:50%}
-    .legend-row{display:flex; justify-content:space-between; gap:12px; align-items:center; font-size:13px}
-    .dot{width:10px; height:10px; border-radius:999px; display:inline-block; margin-right:10px}
-    .table-wrap{overflow:auto}
-    table{width:100%; border-collapse:collapse; min-width:820px}
-    th, td{padding:14px 12px; text-align:left; border-bottom:1px solid var(--line); font-size:14px}
-    th{color:var(--muted); font-weight:600; background:rgba(147,164,190,.06)}
-    .status{display:inline-flex; align-items:center; gap:8px; padding:7px 10px; border-radius:999px; font-size:12px; font-weight:700}
-    .status::before{content:""; width:8px; height:8px; border-radius:50%; background:currentColor}
-    .ok{color:var(--green); background:rgba(74,222,128,.12)}
-    .mid{color:var(--amber); background:rgba(251,191,36,.12)}
-    .bad{color:var(--red); background:rgba(251,113,133,.12)}
-    .quality{display:flex; gap:12px; flex-wrap:wrap; color:var(--muted); font-size:13px}
-    .quality span{padding:8px 10px; border-radius:10px; background:rgba(147,164,190,.08)}
-    @media (max-width: 1250px){ .kpis{grid-template-columns:repeat(3,1fr)} }
-    @media (max-width: 1100px){ .grid{grid-template-columns:1fr 1fr} .bars{grid-template-columns:repeat(6,1fr)} }
-    @media (max-width: 760px){ .kpis,.grid{grid-template-columns:1fr} .wrap{padding:16px} .bars{grid-template-columns:repeat(4,1fr)} }
+    :root { --paper:#fff; --ink:#25313c; --muted:#596977; --line:#d8e1e8; --blue:#146dad; --green:#237655; --soft:#f4f7f8; --failure:#a52e34; }
+    * { box-sizing:border-box; letter-spacing:0; }
+    body { margin:0; background:var(--paper); color:var(--ink); font:16px/1.5 Candara, 'Segoe UI', sans-serif; }
+    main { max-width:1400px; margin:auto; padding:32px; }
+    h1 { font:normal 34px/1.15 Georgia, serif; margin:0 0 8px; }
+    h2 { font-size:19px; line-height:1.3; margin:0; }
+    p { margin:6px 0; }
+    header { display:flex; justify-content:space-between; align-items:center; gap:20px; padding-bottom:22px; }
+    .muted, .meta, .chart-note { color:var(--muted); }
+    .meta { font-size:13px; max-width:370px; }
+    .quality { border-left:4px solid var(--blue); background:var(--soft); padding:16px 20px; margin-bottom:24px; }
+    .quality-heading { display:flex; align-items:center; flex-wrap:wrap; gap:12px; }
+    .quality-heading strong { color:var(--green); font-size:14px; }
+    .quality p { font-size:14px; max-width:100ch; }
+    details { margin-top:12px; font-size:14px; }
+    summary { cursor:pointer; font-weight:600; }
+    .audit-wrap { overflow:auto; margin-top:12px; }
+    table { width:100%; border-collapse:collapse; font-size:13px; }
+    th, td { text-align:left; border-bottom:1px solid var(--line); padding:9px 12px 9px 0; vertical-align:top; }
+    .audit-table { min-width:530px; }
+    .pass { color:var(--green); font-weight:700; }
+    .fail { color:var(--failure); font-weight:700; }
+    .filters { display:grid; grid-template-columns:140px 170px 1fr 1fr 1.4fr auto; gap:16px; align-items:start; padding:20px 0; border-block:1px solid var(--line); }
+    .filter { min-width:0; }
+    .filter label { display:block; font-size:14px; font-weight:600; margin-bottom:7px; }
+    select, button { font:inherit; border:1px solid #a9b7c2; border-radius:4px; background:white; color:var(--ink); padding:9px 10px; }
+    select { width:100%; min-height:44px; }
+    select[multiple] { height:106px; padding:3px; }
+    option { padding:3px 7px; }
+    select:disabled { background:var(--soft); color:var(--muted); }
+    .filter small { display:block; color:var(--failure); font-size:12px; margin-top:6px; }
+    button { cursor:pointer; white-space:nowrap; min-height:44px; margin-top:28px; }
+    button:hover { background:var(--soft); }
+    :focus-visible { outline:3px solid var(--blue); outline-offset:3px; }
+    .selection { display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px; padding:15px 0; color:var(--muted); font-size:14px; }
+    .kpis { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:14px; margin-bottom:12px; }
+    .kpi { border:1px solid var(--line); border-radius:6px; padding:20px 16px; min-width:0; }
+    .kpi:first-child { border-top:3px solid var(--blue); padding-top:18px; }
+    .kpi h2 { font-size:14px; font-weight:600; min-height:42px; }
+    .kpi strong { display:block; font-size:27px; line-height:1.3; margin:10px 0 6px; font-variant-numeric:tabular-nums; overflow-wrap:anywhere; }
+    .kpi small { display:block; color:var(--muted); font-size:13px; }
+    .comparison { font-size:13px; color:var(--muted); border-bottom:1px solid var(--line); padding:6px 0 20px; }
+    .charts { display:grid; grid-template-columns:minmax(0,1.7fr) minmax(0,1fr); column-gap:36px; }
+    .chart-section { min-width:0; padding:26px 0; border-bottom:1px solid var(--line); }
+    .chart-note { font-size:13px; margin:5px 0 18px; }
+    .trend-scroll { overflow-x:auto; }
+    #trendChart { width:100%; min-width:520px; display:block; aspect-ratio:740/310; }
+    .legend { display:flex; flex-wrap:wrap; gap:18px; font-size:13px; margin-bottom:6px; }
+    .swatch { display:inline-block; width:12px; height:12px; margin-right:7px; vertical-align:middle; background:var(--swatch); }
+    .donut-layout { display:grid; grid-template-columns:160px minmax(0,1fr); gap:22px; align-items:center; min-height:235px; }
+    .donut { width:160px; height:160px; display:block; }
+    .distribution { list-style:none; margin:0; padding:0; display:grid; gap:13px; }
+    .distribution li { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:10px; align-items:baseline; font-size:14px; }
+    .distribution span { overflow-wrap:anywhere; }
+    .distribution strong { text-align:right; font-size:14px; font-variant-numeric:tabular-nums; }
+    .distribution small { display:block; color:var(--muted); font-weight:normal; }
+    .horizontal-bars { display:grid; gap:22px; min-height:220px; align-content:center; }
+    .bar-heading { display:flex; justify-content:space-between; gap:15px; font-size:14px; margin-bottom:7px; }
+    .bar-heading span { overflow-wrap:anywhere; }
+    .bar-heading strong { white-space:nowrap; font-variant-numeric:tabular-nums; }
+    .bar-track { background:var(--soft); height:15px; }
+    .bar-fill { height:100%; background:var(--blue); width:var(--width); }
+    .promotion { grid-column:1/-1; }
+    .no-promotion { display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px; padding:12px 0; margin-bottom:16px; border-bottom:1px solid var(--line); color:var(--muted); font-size:14px; }
+    .no-promotion strong { color:var(--ink); font-variant-numeric:tabular-nums; }
+    .promotion-scroll { overflow-x:auto; }
+    .vertical-bars { display:grid; grid-template-columns:repeat(var(--columns),minmax(135px,1fr)); gap:20px; padding:10px 0; }
+    .vertical-item { display:grid; grid-template-rows:24px 220px auto; gap:10px; min-width:0; text-align:center; font-size:14px; }
+    .vertical-item strong { font-variant-numeric:tabular-nums; white-space:nowrap; }
+    .vertical-track { display:flex; align-items:flex-end; justify-content:center; border-bottom:1px solid var(--line); }
+    .vertical-fill { width:65%; max-width:90px; height:var(--height); background:var(--blue); }
+    .vertical-label { overflow-wrap:anywhere; }
+    .empty { padding:45px 16px; text-align:center; color:var(--muted); background:var(--soft); }
+    footer { display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px; padding:24px 0 0; font-size:13px; color:var(--muted); }
+    .methodology { margin-top:24px; }
+    .methodology p { max-width:100ch; }
+    @media(max-width:1150px) { .filters { grid-template-columns:repeat(3,minmax(0,1fr)); } .kpis { grid-template-columns:repeat(3,minmax(0,1fr)); } .donut-layout { grid-template-columns:1fr; } .donut { margin:auto; } }
+    @media(max-width:760px) { main { padding:20px; } header { align-items:flex-start; flex-direction:column; gap:8px; } h1 { font-size:29px; } .charts { grid-template-columns:1fr; } .kpis { grid-template-columns:repeat(2,minmax(0,1fr)); } .filters { grid-template-columns:repeat(2,minmax(0,1fr)); } .quality { padding:14px; } .donut-layout { grid-template-columns:160px minmax(0,1fr); } }
+    @media(max-width:440px) { main { padding:16px; } .kpis { grid-template-columns:1fr; gap:10px; } .kpi h2 { min-height:0; } .kpi { padding:16px; } .kpi strong { font-size:29px; } .donut-layout { grid-template-columns:1fr; } .filter.promo-filter { grid-column:1/-1; } button { margin-top:0; } }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="topbar">
-      <div>
-        <h1>Dashboard de Ventas</h1>
-        <p class="sub">Lectura comercial de ventas, devoluciones y promociones con datos validados.</p>
-      </div>
-      <div class="controls">
-        <select id="yearFilter" multiple aria-label="Filtrar años"><option value="all">Todos los años</option></select>
-        <select id="monthFilter" multiple aria-label="Filtrar meses"><option value="all">Todos los meses</option></select>
-        <select id="channelFilter" aria-label="Filtrar canal"><option value="all">Todos los canales</option></select>
-        <select id="userFilter" aria-label="Filtrar tipo de usuario"><option value="all">Todos los usuarios</option></select>
-        <select id="promotionFilter" aria-label="Filtrar promoción"><option value="all">Todas las promociones</option></select>
-        <div class="chip">Fuente: Supabase validado</div>
-        <button id="reload">Actualizar vista</button>
-      </div>
+  <main>
+    <header>
+      <div><h1>Informe de ventas</h1><p class="muted">Ventas, devoluciones y clientes registrados</p></div>
+      <p class="meta" id="snapshotMeta"></p>
+    </header>
+    <section class="quality" aria-labelledby="qualityTitle">
+      <div class="quality-heading"><h2 id="qualityTitle">Data Quality Status</h2><strong id="qualityStatus">PASS con observación temporal</strong></div>
+      <p>Una venta del 23/01/2026 usa la campaña «Rebajas enero 2025». Se considera un registro válido con posible desfase operativo: no se excluye ni se reasigna, y se mantiene en todos los indicadores y gráficos, incluida la vista por promoción.</p>
+      <details><summary>ValidaciÃ³n de las siete tablas y limitaciones</summary>
+        <div class="audit-wrap"><table class="audit-table"><thead><tr><th>Tabla public</th><th>Filas</th><th>Estado</th><th>Resultado</th></tr></thead><tbody id="qualityChecks"></tbody></table></div>
+        <p>Claves duplicadas: 0. Campos requeridos ausentes: 0. Referencias huÃ©rfanas: 0. Cada uniÃ³n conserva 200 filas y 200 claves Ãºnicas de lÃ­nea. El puente de promociones no se une a los importes.</p>
+        <p>16 lÃ­neas con descuento figuran como Â«Sin promocionÂ»; no se reasignan a campaÃ±as. Sin caÃ­das de precio superiores al 50 % del precio de lista en las lÃ­neas observadas. No hay datos de existencias para evaluar roturas de stock.</p>
+        <p>Seguridad: RLS deshabilitado en las siete tablas. No se han modificado permisos. La extracciÃ³n omite datos identificativos de clientes.</p>
+        <p>Cobertura observada: 01/01/2024 a 11/06/2026; junio de 2026 es parcial. No se presupone cobertura fuera de ese intervalo ni representatividad del negocio completo.</p>
+      </details>
+    </section>
+    <section class="filters" aria-label="Filtros de ventas">
+      <div class="filter"><label for="yearFilter">AÃ±o</label><select id="yearFilter" multiple size="4"><option value="all" selected>Todos los aÃ±os</option></select></div>
+      <div class="filter"><label for="monthFilter">Mes</label><select id="monthFilter" multiple size="4"><option value="all" selected>Todos los meses</option></select></div>
+      <div class="filter"><label for="channelFilter">Canal de venta</label><select id="channelFilter"><option value="all">Todos los canales</option></select></div>
+      <div class="filter"><label for="userFilter">Tipo de usuario</label><select id="userFilter"><option value="all">Todos los usuarios</option></select></div>
+      <div class="filter promo-filter"><label for="promotionFilter">Promoción aplicada</label><select id="promotionFilter"><option value="all">Todas las promociones</option></select></div>
+      <button id="reload" type="button" title="Restablecer todos los filtros">Restablecer</button>
+    </section>
+    <div class="selection" role="status" aria-live="polite"><span id="selectionLabel"></span><span>Ingresos con IVA, despuÃ©s de descuentos</span></div>
+    <section class="kpis" aria-label="Indicadores de ventas">
+      <article class="kpi"><h2>Total Sales â€” Revenue (â‚¬)</h2><strong id="kpiRevenue">-</strong><small>Total del perÃ­odo seleccionado</small></article>
+      <article class="kpi"><h2>Total Sales â€” Units</h2><strong id="kpiUnits">-</strong><small>Unidades de ventas completadas</small></article>
+      <article class="kpi"><h2>Returns â€” Revenue (â‚¬)</h2><strong id="kpiReturnsRevenue">-</strong><small>Importe devuelto, en positivo</small></article>
+      <article class="kpi"><h2>Returns â€” Units</h2><strong id="kpiReturnsUnits">-</strong><small>Unidades devueltas</small></article>
+      <article class="kpi"><h2>% of Sales from Registered Users</h2><strong id="kpiRegistered">-</strong><small>Porcentaje de ingresos completados</small></article>
+    </section>
+    <p class="comparison" id="comparison"></p>
+    <div class="charts">
+      <section class="chart-section" aria-labelledby="trendTitle">
+        <h2 id="trendTitle">Comparativa mensual</h2><p class="chart-note">Ingresos completados por aÃ±o Â· EUR Â· Junio 2026 parcial</p>
+        <div class="legend" id="trendLegend"></div><div class="trend-scroll"><svg id="trendChart" viewBox="0 0 740 310" role="img" aria-label="Ingresos mensuales por aÃ±o"></svg></div>
+        <details><summary>Valores mensuales</summary><div class="audit-wrap" id="trendValues"></div></details>
+      </section>
+      <section class="chart-section" aria-labelledby="channelTitle"><h2 id="channelTitle">Ventas por canal</h2><p class="chart-note">ParticipaciÃ³n en los ingresos completados</p><div id="channelList"></div></section>
+      <section class="chart-section" aria-labelledby="categoryTitle"><h2 id="categoryTitle">Ventas por categorÃ­a</h2><p class="chart-note">Top 8 por ingresos completados</p><div class="horizontal-bars" id="categoryChart"></div></section>
+      <section class="chart-section" aria-labelledby="userTitle"><h2 id="userTitle">Ventas por tipo de usuario</h2><p class="chart-note">Registrado frente a invitado Â· Ingresos completados</p><div id="userList"></div></section>
+      <section class="chart-section promotion" aria-labelledby="promotionTitle"><h2 id="promotionTitle">Ventas por promoción</h2><p class="chart-note">Incluye registros con desfase temporal de campaña cuando estén validados por negocio</p><div id="promoList"></div></section>
     </div>
-
-    <section class="kpis">
-      <article class="card kpi"><label>Total Sales — Revenue (€)</label><strong id="kpiRevenue">-</strong><div class="trend" id="kpiRevenueTrend">-</div><div class="kpi-comparison"><div><span>Mes anterior</span><strong id="kpiRevenuePrevious">-</strong></div><div><span>Diferencia</span><strong id="kpiRevenueDifference">-</strong></div><div><span>Cambio</span><strong id="kpiRevenueChange">-</strong></div></div></article>
-      <article class="card kpi"><label>Total Sales — Units</label><strong id="kpiUnits">-</strong><div class="trend" id="kpiUnitsTrend">-</div></article>
-      <article class="card kpi"><label>Returns — Revenue (€)</label><strong id="kpiReturnsRevenue">-</strong><div class="trend" id="kpiReturnsTrend">-</div></article>
-      <article class="card kpi"><label>Returns — Units</label><strong id="kpiReturnsUnits">-</strong><div class="trend" id="kpiReturnsUnitsTrend">-</div></article>
-      <article class="card kpi"><label>% of Sales from Registered Users</label><strong id="kpiRegistered">-</strong><div class="trend" id="kpiRegisteredTrend">-</div></article>
-    </section>
-
-    <section class="card panel" aria-live="polite">
-      <div class="head"><div><h2>Data Quality Status</h2><p>Validación aplicada antes de calcular los indicadores.</p></div><span class="status ok" id="qualityStatus">Validated snapshot</span></div>
-      <div class="quality" id="qualityChecks"></div>
-    </section>
-
-    <section class="summary-grid">
-      <article class="card summary-card">
-        <div class="summary-label">Canal líder</div>
-        <div class="summary-value" id="insightChannel">-</div>
-        <div class="summary-helper" id="insightChannelValue">-</div>
-      </article>
-      <article class="card summary-card">
-        <div class="summary-label">Promoción más relevante</div>
-        <div class="summary-value" id="insightPromo">-</div>
-        <div class="summary-helper" id="insightPromoValue">-</div>
-      </article>
-      <article class="card summary-card">
-        <div class="summary-label">Producto estrella</div>
-        <div class="summary-value" id="insightProduct">-</div>
-        <div class="summary-helper" id="insightProductValue">-</div>
-      </article>
-    </section>
-
-    <section class="grid">
-      <article class="card panel">
-        <div class="head">
-          <div>
-            <h2>Evolución de ventas</h2>
-            <p>Ingresos mensuales sobre ventas completadas.</p>
-          </div>
-          <div class="chip" id="trendLabel">-</div>
-        </div>
-          <svg id="trendChart" viewBox="0 0 720 280" role="img" aria-label="Tendencia comparativa por año"></svg>
-      </article>
-
-      <aside class="side">
-        <article class="card panel">
-          <div class="head">
-            <div>
-              <h2>Ventas por canal</h2>
-              <p>Distribución por canal de venta.</p>
-            </div>
-          </div>
-          <div class="legend" id="channelList"></div>
-        </article>
-
-        <article class="card panel">
-          <div class="head">
-            <div>
-              <h2>Promociones</h2>
-              <p>Impacto por promoción aplicada.</p>
-            </div>
-          </div>
-          <div class="legend" id="promoList"></div>
-        </article>
-      </aside>
-    </section>
-
-    <section class="grid">
-      <article class="card panel">
-        <div class="head"><div><h2>Ventas por categoría</h2><p>Las ocho categorías con mayor facturación.</p></div></div>
-        <div class="bars" id="categoryChart"></div>
-      </article>
-      <article class="card panel">
-        <div class="head"><div><h2>Ventas por tipo de usuario</h2><p>Registrado frente a no registrado.</p></div></div>
-        <div class="legend" id="userList"></div>
-      </article>
-    </section>
-
-    <section class="card panel" style="margin-bottom:16px;">
-      <div class="head">
-        <div>
-          <h2>Top productos</h2>
-          <p>Ranking por ingresos generados.</p>
-        </div>
-      </div>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Producto</th>
-              <th>Categoría</th>
-              <th>Unidades</th>
-              <th>Ingresos</th>
-              <th>Margen</th>
-              <th>Estado</th>
-            </tr>
-          </thead>
-          <tbody id="topProducts"></tbody>
-        </table>
-      </div>
-    </section>
-  </div>
-
+    <details class="methodology"><summary>Definiciones y origen de los indicadores</summary>
+      <p>Ingresos: suma de fact_ventas.importe_total de lÃ­neas Completada, con IVA y descuentos ya aplicados. No es facturaciÃ³n neta de devoluciones. Unidades: suma de unidades con el mismo estado. Devoluciones: importe_total y unidades con estado Devuelta; el origen ya los almacena positivos. Cancelada queda excluida.</p>
+      <p>Usuarios registrados: ingresos de lÃ­neas completadas de usuarios Registrado divididos por todos los ingresos completados filtrados. Sin ingresos, el porcentaje no estÃ¡ disponible. Â«InvitadoÂ» corresponde al valor de origen Â«No registradoÂ».</p>
+      <p>Uniones muchos-a-uno desde fact_ventas a dim_fecha por id_fecha, dim_articulos por id_articulo, dim_canal por id_canal, dim_usuarios por id_usuario y dim_promociones por id_promocion. fact_promociones_articulos se valida aparte mediante existencia de pares; no multiplica ventas.</p>
+      <p>La atribuciÃ³n usa la promociÃ³n registrada en fact_ventas, no el aÃ±o del nombre de la campaÃ±a ni su ventana de vigencia. Mario Menor confirmÃ³ el 20/10/2026 que la lÃ­nea del 23/01/2026 con Â«Rebajas enero 2025Â» es vÃ¡lida y puede corresponder a un registro tardÃ­o. Se conserva en enero de 2026, sin modificar el origen.</p>
+      <p>Los meses fuera de la cobertura o de la selecciÃ³n se muestran como huecos; cero indica ausencia de ventas completadas para el filtro dentro de un mes observado. La comparaciÃ³n secundaria usa el Ãºltimo mes con registros seleccionados frente al mes natural anterior, manteniendo canal, tipo de usuario y promociÃ³n. Â«TodosÂ» junto con opciones concretas equivale a esas opciones concretas; sin opciones concretas equivale a todos.</p>
+    </details>
+    <footer><span>Fuente: Supabase Â· InstantÃ¡nea sin conexiÃ³n en vivo</span><span id="footerCoverage"></span></footer>
+  </main>
   <script>
-    const fmtMoney = n => new Intl.NumberFormat('es-ES', { style:'currency', currency:'EUR' }).format(n || 0);
-    const fmtNum = n => new Intl.NumberFormat('es-ES').format(n || 0);
-    const fmtPct = n => `${(n || 0).toFixed(1)}%`;
-
-    // Names, email hashes, birth dates, postal codes, and other identifying fields are deliberately excluded from this snapshot.
-    const SNAPSHOT = [{year:2024,month:1,channel:"Online",userType:"No registrado",promotion:"Sin promocion",category:"Cocina",status:"Completada",units:1,revenue:266.19},{year:2024,month:1,channel:"Online",userType:"No registrado",promotion:"Sin promocion",category:"Cocina",status:"Completada",units:2,revenue:2129.58},{year:2024,month:1,channel:"Online",userType:"No registrado",promotion:"Sin promocion",category:"Limpieza",status:"Completada",units:1,revenue:205.69},{year:2024,month:1,channel:"Tienda fisica",userType:"No registrado",promotion:"Sin promocion",category:"Pequeno electrodomestico",status:"Completada",units:1,revenue:859.09},{year:2024,month:1,channel:"App",userType:"No registrado",promotion:"Sin promocion",category:"Limpieza",status:"Completada",units:1,revenue:217.79},{year:2024,month:1,channel:"Online",userType:"No registrado",promotion:"Sin promocion",category:"Cocina",status:"Completada",units:1,revenue:725.99},{year:2024,month:1,channel:"Marketplace",userType:"No registrado",promotion:"Sin promocion",category:"Cocina",status:"Completada",units:1,revenue:338.79},{year:2024,month:1,channel:"Online",userType:"No registrado",promotion:"Sin promocion",category:"Cocina",status:"Completada",units:1,revenue:362.99},{year:2024,month:1,channel:"Tienda fisica",userType:"No registrado",promotion:"Sin promocion",category:"Cocina",status:"Completada",units:1,revenue:1064.79},{year:2024,month:1,channel:"Online",userType:"No registrado",promotion:"Rebajas enero 2024",category:"Pequeno electrodomestico",status:"Completada",units:1,revenue:131.3},{year:2024,month:2,channel:"Tienda fisica",userType:"No registrado",promotion:"Sin promocion",category:"Cocina",status:"Completada",units:1,revenue:375.09},{year:2024,month:2,channel:"Tienda fisica",userType:"No registrado",promotion:"Sin promocion",category:"Limpieza",status:"Completada",units:1,revenue:629.19},{year:2024,month:2,channel:"Tienda fisica",userType:"No registrado",promotion:"Sin promocion",category:"Pequeno electrodomestico",status:"Completada",units:1,revenue:72.59},{year:2024,month:2,channel:"Tienda fisica",userType:"No registrado",promotion:"Sin promocion",category:"Cocina",status:"Completada",units:1,revenue:508.19},{year:2024,month:2,channel:"App",userType:"No registrado",promotion:"Sin promocion",category:"Pequeno electrodomestico",status:"Completada",units:1,revenue:326.69},{year:2024,month:2,channel:"Tienda fisica",userType:"No registrado",promotion:"Sin promocion",category:"Cocina",status:"Completada",units:1,revenue:725.99},{year:2024,month:2,channel:"Tienda fisica",userType:"No registrado",promotion:"Sin promocion",category:"Limpieza",status:"Completada",units:1,revenue:375.09},{year:2024,month:3,channel:"App",userType:"No registrado",promotion:"Sin promocion",category:"Pequeno electrodomestico",status:"Completada",units:1,revenue:48.39},{year:2024,month:4,channel:"Online",userType:"No registrado",promotion:"Sin promocion",category:"Pequeno electrodomestico",status:"Completada",units:1,revenue:326.69},{year:2024,month:4,channel:"Tienda fisica",userType:"No registrado",promotion:"Sin promocion",category:"Limpieza",status:"Completada",units:2,revenue:1161.58},{year:2024,month:4,channel:"Online",userType:"No registrado",promotion:"Sin promocion",category:"Pequeno electrodomestico",status:"Cancelada",units:1,revenue:362.99},{year:2024,month:4,channel:"Tienda fisica",userType:"No registrado",promotion:"Sin promocion",category:"Cocina",status:"Devuelta",units:1,revenue:604.99},{year:2024,month:4,channel:"App",userType:"No registrado",promotion:"Sin promocion",category:"Pequeno electrodomestico",status:"Completada",units:1,revenue:833.31},{year:2024,month:4,channel:"Online",userType:"No registrado",promotion:"Sin promocion",category:"Cocina",status:"Completada",units:1,revenue:725.99},{year:2024,month:5,channel:"Tienda fisica",userType:"No registrado",promotion:"Sin promocion",category:"Limpieza",status:"Completada",units:1,revenue:266.19},{year:2024,month:5,channel:"Tienda fisica",userType:"No registrado",promotion:"Sin promocion",category:"Cocina",status:"Completada",units:1,revenue:568.69},{year:2024,month:5,channel:"Tienda fisica",userType:"No registrado",promotion:"Sin promocion",category:"Cocina",status:"Completada",units:1,revenue:604.99},{year:2024,month:5,channel:"Tienda fisica",userType:"No registrado",promotion:"Sin promocion",category:"Limpieza",status:"Completada",units:1,revenue:375.09},{year:2024,month:5,channel:"Tienda fisica",userType:"No registrado",promotion:"Sin promocion",category:"Cocina",status:"Completada",units:1,revenue:1064.79},{year:2024,month:5,channel:"App",userType:"No registrado",promotion:"Sin promocion",category:"Pequeno electrodomestico",status:"Completada",units:1,revenue:809.84},{year:2024,month:5,channel:"Online",userType:"No registrado",promotion:"Sin promocion",category:"Cocina",status:"Completada",units:1,revenue:193.59},{year:2024,month:5,channel:"Tienda fisica",userType:"No registrado",promotion:"Sin promocion",category:"Cocina",status:"Completada",units:1,revenue:338.79},{year:2024,month:6,channel:"Marketplace",userType:"No registrado",promotion:"Sin promocion",category:"Cocina",status:"Completada",units:1,revenue:592.89},{year:2024,month:6,channel:"Online",userType:"No registrado",promotion:"Sin promocion",category:"Pequeno electrodomestico",status:"Completada",units:1,revenue:60.49},{year:2024,month:6,channel:"Marketplace",userType:"Registrado",promotion:"Sin promocion",category:"Limpieza",status:"Completada",units:1,revenue:1016.39},{year:2024,month:6,channel:"Online",userType:"No registrado",promotion:"Sin promocion",category:"Cocina",status:"Completada",units:1,revenue:629.19},{year:2024,month:6,channel:"Online",userType:"No registrado",promotion:"Sin promocion",category:"Pequeno electrodomestico",status:"Completada",units:1,revenue:72.59},{year:2024,month:6,channel:"Online",userType:"No registrado",promotion:"Sin promocion",category:"Pequeno electrodomestico",status:"Completada",units:1,revenue:326.69},{year:2024,month:6,channel:"App",userType:"No registrado",promotion:"Sin promocion",category:"Pequeno electrodomestico",status:"Completada",units:1,revenue:205.69},{year:2024,month:7,channel:"Online",userType:"No registrado",promotion:"Sin promocion",category:"Cocina",status:"Completada",units:1,revenue:568.69},{year:2024,month:7,channel:"Online",userType:"No registrado",promotion:"Sin promocion",category:"Cocina",status:"Completada",units:1,revenue:423.49},{year:2024,month:7,channel:"Tienda fisica",userType:"No registrado",promotion:"Sin promocion",category:"Limpieza",status:"Completada",units:1,revenue:387.19},{year:2024,month:7,channel:"App",userType:"No registrado",promotion:"Sin promocion",category:"Cocina",status:"Completada",units:1,revenue:585.14},{year:2024,month:7,channel:"Online",userType:"No registrado",promotion:"Sin promocion",category:"Pequeno electrodomestico",status:"Completada",units:1,revenue:254.09},{year:2024,month:8,channel:"Marketplace",userType:"No registrado",promotion:"Sin promocion",category:"Pequeno electrodomestico",status:"Completada",units:1,revenue:859.09},{year:2024,month:8,channel:"Online",userType:"No registrado",promotion:"Sin promocion",category:"Limpieza",status:"Completada",units:1,revenue:266.19},{year:2024,month:8,channel:"Tienda fisica",userType:"No registrado",promotion:"Sin promocion",category:"Limpieza",status:"Completada",units:1,revenue:169.39},{year:2024,month:8,channel:"Tienda fisica",userType:"No registrado",promotion:"Sin promocion",category:"Pequeno electrodomestico",status:"Completada",units:1,revenue:60.49},{year:2024,month:8,channel:"App",userType:"No registrado",promotion:"Sin promocion",category:"Pequeno electrodomestico",status:"Completada",units:2,revenue:653.38},{year:2024,month:8,channel:"Tienda fisica",userType:"No registrado",promotion:"Sin promocion",category:"Cocina",status:"Completada",units:1,revenue:798.59},{year:2024,month:8,channel:"Online",userType:"No registrado",promotion:"Sin promocion",category:"Pequeno electrodomestico",status:"Completada",units:1,revenue:72.59},{year:2024,month:8,channel:"Online",userType:"No registrado",promotion:"Sin promocion",category:"Cocina",status:"Completada",units:2,revenue:677.58},{year:2024,month:9,channel:"Tienda fisica",userType:"No registrado",promotion:"Sin promocion",category:"Cocina",status:"Completada",units:1,revenue:604.99},{year:2024,month:9,channel:"App",userType:"No registrado",promotion:"Sin promocion",category:"Cocina",status:"Completada",units:1,revenue:266.19},{year:2024,month:9,channel:"Marketplace",userType:"Registrado",promotion:"Sin promocion",category:"Pequeno electrodomestico",status:"Devuelta",units:3,revenue:1016.36},{year:2024,month:9,channel:"Tienda fisica",userType:"No registrado",promotion:"Sin promocion",category:"Cocina",status:"Completada",units:1,revenue:568.69},{year:2024,month:9,channel:"Online",userType:"No registrado",promotion:"Sin promocion",category:"Limpieza",status:"Completada",units:1,revenue:266.19},{year:2024,month:10,channel:"App",userType:"No registrado",promotion:"Sin promocion",category:"Limpieza",status:"Completada",units:2,revenue:2032.78},{year:2024,month:10,channel:"App",userType:"No registrado",promotion:"Sin promocion",category:"Limpieza",status:"Completada",units:1,revenue:481.2},{year:2024,month:10,channel:"Online",userType:"No registrado",promotion:"Sin promocion",category:"Pequeno electrodomestico",status:"Completada",units:1,revenue:362.99},{year:2024,month:10,channel:"Marketplace",userType:"Registrado",promotion:"Sin promocion",category:"Limpieza",status:"Completada",units:1,revenue:883.29},{year:2024,month:11,channel:"Online",userType:"No registrado",promotion:"Sin promocion",category:"Pequeno electrodomestico",status:"Completada",units:1,revenue:338.79},{year:2024,month:11,channel:"Tienda fisica",userType:"No registrado",promotion:"Sin promocion",category:"Limpieza",status:"Completada",units:1,revenue:387.19},{year:2024,month:11,channel:"Online",userType:"No registrado",promotion:"Sin promocion",category:"Cocina",status:"Completada",units:3,revenue:1887.56},{year:2024,month:11,channel:"Online",userType:"No registrado",promotion:"Sin promocion",category:"Limpieza",status:"Completada",units:1,revenue:169.39},{year:2024,month:11,channel:"Online",userType:"No registrado",promotion:"Sin promocion",category:"Limpieza",status:"Completada",units:1,revenue:375.09},{year:2024,month:11,channel:"Marketplace",userType:"No registrado",promotion:"Sin promocion",category:"Cocina",status:"Completada",units:1,revenue:750.19},{year:2024,month:11,channel:"Online",userType:"No registrado",promotion:"Black Friday 2024",category:"Cocina",status:"Completada",units:2,revenue:945.39},{year:2024,month:11,channel:"App",userType:"No registrado",promotion:"Black Friday 2024",category:"Cocina",status:"Completada",units:1,revenue:282.28},{year:2024,month:11,channel:"Tienda fisica",userType:"No registrado",promotion:"Black Friday 2024",category:"Cocina",status:"Completada",units:1,revenue:282.28},{year:2024,month:11,channel:"Online",userType:"No registrado",promotion:"Black Friday 2024",category:"Pequeno electrodomestico",status:"Completada",units:1,revenue:204.28},{year:2024,month:12,channel:"App",userType:"No registrado",promotion:"Sin promocion",category:"Pequeno electrodomestico",status:"Completada",units:1,revenue:72.59},{year:2024,month:12,channel:"Marketplace",userType:"No registrado",promotion:"Sin promocion",category:"Limpieza",status:"Completada",units:1,revenue:205.69},{year:2024,month:12,channel:"Online",userType:"No registrado",promotion:"Sin promocion",category:"Pequeno electrodomestico",status:"Completada",units:1,revenue:60.49},{year:2024,month:12,channel:"Tienda fisica",userType:"No registrado",promotion:"Navidad hogar 2024",category:"Cocina",status:"Completada",units:1,revenue:337.92},{year:2024,month:12,channel:"Online",userType:"No registrado",promotion:"Sin promocion",category:"Limpieza",status:"Completada",units:1,revenue:241.99},{year:2024,month:12,channel:"Marketplace",userType:"No registrado",promotion:"Sin promocion",category:"Pequeno electrodomestico",status:"Completada",units:1,revenue:834.89},{year:2024,month:12,channel:"Marketplace",userType:"No registrado",promotion:"Sin promocion",category:"Limpieza",status:"Completada",units:2,revenue:704.2},{year:2024,month:12,channel:"App",userType:"No registrado",promotion:"Sin promocion",category:"Limpieza",status:"Completada",units:1,revenue:496.09},{year:2024,month:12,channel:"Tienda fisica",userType:"No registrado",promotion:"Sin promocion",category:"Cocina",status:"Completada",units:1,revenue:508.19},{year:2025,month:1,channel:"Tienda fisica",userType:"No registrado",promotion:"Sin promocion",category:"Limpieza",status:"Completada",units:1,revenue:217.79},{year:2025,month:1,channel:"Tienda fisica",userType:"No registrado",promotion:"Sin promocion",category:"Cocina",status:"Completada",units:1,revenue:193.59},{year:2025,month:1,channel:"App",userType:"No registrado",promotion:"Rebajas enero 2025",category:"Cocina",status:"Completada",units:1,revenue:290.71},{year:2025,month:1,channel:"Tienda fisica",userType:"No registrado",promotion:"Sin promocion",category:"Limpieza",status:"Completada",units:1,revenue:133.09},{year:2025,month:1,channel:"App",userType:"No registrado",promotion:"Sin promocion",category:"Pequeno electrodomestico",status:"Completada",units:1,revenue:326.69},{year:2025,month:2,channel:"Marketplace",userType:"No registrado",promotion:"Sin promocion",category:"Cocina",status:"Completada",units:1,revenue:798.59},{year:2025,month:2,channel:"Marketplace",userType:"No registrado",promotion:"Sin promocion",category:"Pequeno electrodomestico",status:"Completada",units:1,revenue:326.69},{year:2025,month:2,channel:"App",userType:"No registrado",promotion:"Sin promocion",category:"Cocina",status:"Completada",units:1,revenue:774.63},{year:2025,month:2,channel:"App",userType:"No registrado",promotion:"Sin promocion",category:"Limpieza",status:"Completada",units:1,revenue:481.2},{year:2025,month:2,channel:"Online",userType:"No registrado",promotion:"Sin promocion",category:"Limpieza",status:"Completada",units:2,revenue:1161.58},{year:2025,month:3,channel:"Online",userType:"No registrado",promotion:"Sin promocion",category:"Pequeno electrodomestico",status:"Completada",units:1,revenue:205.69},{year:2025,month:3,channel:"Tienda fisica",userType:"No registrado",promotion:"Sin promocion",category:"Pequeno electrodomestico",status:"Completada",units:1,revenue:883.29},{year:2025,month:3,channel:"Online",userType:"No registrado",promotion:"Sin promocion",category:"Cocina",status:"Completada",units:1,revenue:254.09},{year:2025,month:4,channel:"App",userType:"No registrado",promotion:"Sin promocion",category:"Cocina",status:"Completada",units:1,revenue:568.69},{year:2025,month:4,channel:"Marketplace",userType:"No registrado",promotion:"Sin promocion",category:"Limpieza",status:"Completada",units:1,revenue:494.27},{year:2025,month:4,channel:"Online",userType:"No registrado",promotion:"Sin promocion",category:"Pequeno electrodomestico",status:"Completada",units:1,revenue:338.79},{year:2025,month:4,channel:"Online",userType:"No registrado",promotion:"Sin promocion",category:"Cocina",status:"Completada",units:1,revenue:750.19},{year:2025,month:4,channel:"Tienda fisica",userType:"No registrado",promotion:"Sin promocion",category:"Cocina",status:"Completada",units:1,revenue:931.69},{year:2025,month:4,channel:"Tienda fisica",userType:"No registrado",promotion:"Sin promocion",category:"Cocina",status:"Completada",units:1,revenue:689.69},{year:2025,month:5,channel:"Online",userType:"No registrado",promotion:"Sin promocion",category:"Cocina",status:"Completada",units:1,revenue:798.59},{year:2025,month:5,channel:"App",userType:"No registrado",promotion:"Sin promocion",category:"Limpieza",status:"Completada",units:1,revenue:145.19},{year:2025,month:5,channel:"Online",userType:"No registrado",promotion:"Sin promocion",category:"Limpieza",status:"Completada",units:1,revenue:169.39},{year:2025,month:5,channel:"Marketplace",userType:"No registrado",promotion:"Sin promocion",category:"Cocina",status:"Completada",units:1,revenue:568.69},{year:2025,month:5,channel:"Online",userType:"No registrado",promotion:"Sin promocion",category:"Cocina",status:"Completada",units:1,revenue:423.49},{year:2025,month:5,channel:"Tienda fisica",userType:"No registrado",promotion:"Sin promocion",category:"Limpieza",status:"Completada",units:1,revenue:266.19},{year:2025,month:6,channel:"App",userType:"No registrado",promotion:"Sin promocion",category:"Limpieza",status:"Completada",units:1,revenue:580.79},{year:2025,month:6,channel:"Tienda fisica",userType:"No registrado",promotion:"Sin promocion",category:"Cocina",status:"Completada",units:1,revenue:362.99},{year:2025,month:6,channel:"Tienda fisica",userType:"No registrado",promotion:"Sin promocion",category:"Cocina",status:"Devuelta",units:1,revenue:725.99},{year:2025,month:6,channel:"Marketplace",userType:"No registrado",promotion:"Sin promocion",category:"Cocina",status:"Completada",units:2,revenue:1258.38},{year:2025,month:6,channel:"App",userType:"No registrado",promotion:"Sin promocion",category:"Cocina",status:"Completada",units:1,revenue:338.79},{year:2025,month:7,channel:"Marketplace",userType:"No registrado",promotion:"Sin promocion",category:"Cocina",status:"Completada",units:1,revenue:338.79},{year:2025,month:7,channel:"Marketplace",userType:"No registrado",promotion:"Sin promocion",category:"Limpieza",status:"Completada",units:1,revenue:338.79},{year:2025,month:7,channel:"Tienda fisica",userType:"No registrado",promotion:"Sin promocion",category:"Limpieza",status:"Completada",units:1,revenue:169.39},{year:2025,month:7,channel:"Tienda fisica",userType:"Registrado",promotion:"Sin promocion",category:"Cocina",status:"Completada",units:2,revenue:508.18},{year:2025,month:7,channel:"Marketplace",userType:"No registrado",promotion:"Sin promocion",category:"Pequeno electrodomestico",status:"Completada",units:1,revenue:326.69},{year:2025,month:7,channel:"Tienda fisica",userType:"No registrado",promotion:"Sin promocion",category:"Cocina",status:"Devuelta",units:1,revenue:568.69},{year:2025,month:7,channel:"App",userType:"No registrado",promotion:"Sin promocion",category:"Limpieza",status:"Completada",units:1,revenue:1016.39},{year:2025,month:7,channel:"App",userType:"No registrado",promotion:"Sin promocion",category:"Cocina",status:"Completada",units:1,revenue:677.59},{year:2025,month:7,channel:"App",userType:"No registrado",promotion:"Sin promocion",category:"Cocina",status:"Completada",units:1,revenue:338.79},{year:2025,month:7,channel:"Online",userType:"No registrado",promotion:"Sin promocion",category:"Cocina",status:"Devuelta",units:1,revenue:375.09},{year:2025,month:7,channel:"Tienda fisica",userType:"No registrado",promotion:"Sin promocion",category:"Cocina",status:"Completada",units:1,revenue:266.19},{year:2025,month:7,channel:"Online",userType:"No registrado",promotion:"Sin promocion",category:"Limpieza",status:"Completada",units:2,revenue:774.38},{year:2025,month:8,channel:"Tienda fisica",userType:"Registrado",promotion:"Sin promocion",category:"Limpieza",status:"Completada",units:1,revenue:375.09},{year:2025,month:8,channel:"Online",userType:"No registrado",promotion:"Sin promocion",category:"Limpieza",status:"Completada",units:1,revenue:338.79},{year:2025,month:8,channel:"Online",userType:"No registrado",promotion:"Sin promocion",category:"Pequeno electrodomestico",status:"Completada",units:1,revenue:67.51},{year:2025,month:8,channel:"Online",userType:"Registrado",promotion:"Sin promocion",category:"Pequeno electrodomestico",status:"Completada",units:2,revenue:725.98},{year:2025,month:8,channel:"App",userType:"No registrado",promotion:"Sin promocion",category:"Cocina",status:"Completada",units:3,revenue:1270.46},{year:2025,month:8,channel:"App",userType:"No registrado",promotion:"Sin promocion",category:"Limpieza",status:"Completada",units:2,revenue:435.58},{year:2025,month:8,channel:"Marketplace",userType:"No registrado",promotion:"Sin promocion",category:"Cocina",status:"Completada",units:1,revenue:604.99},{year:2025,month:9,channel:"Tienda fisica",userType:"No registrado",promotion:"Sin promocion",category:"Cocina",status:"Completada",units:1,revenue:592.89},{year:2025,month:9,channel:"Tienda fisica",userType:"No registrado",promotion:"Sin promocion",category:"Cocina",status:"Completada",units:1,revenue:193.59},{year:2025,month:9,channel:"Tienda fisica",userType:"No registrado",promotion:"Sin promocion",category:"Limpieza",status:"Completada",units:2,revenue:290.38},{year:2025,month:9,channel:"Online",userType:"No registrado",promotion:"Sin promocion",category:"Cocina",status:"Completada",units:1,revenue:798.59},{year:2025,month:9,channel:"Online",userType:"No registrado",promotion:"Sin promocion",category:"Cocina",status:"Completada",units:1,revenue:568.69},{year:2025,month:9,channel:"Tienda fisica",userType:"No registrado",promotion:"Sin promocion",category:"Pequeno electrodomestico",status:"Completada",units:1,revenue:60.49},{year:2025,month:10,channel:"Marketplace",userType:"No registrado",promotion:"Sin promocion",category:"Cocina",status:"Devuelta",units:1,revenue:750.19},{year:2025,month:10,channel:"Tienda fisica",userType:"No registrado",promotion:"Sin promocion",category:"Cocina",status:"Completada",units:1,revenue:592.89},{year:2025,month:10,channel:"Marketplace",userType:"No registrado",promotion:"Sin promocion",category:"Cocina",status:"Completada",units:1,revenue:423.49},{year:2025,month:10,channel:"Tienda fisica",userType:"No registrado",promotion:"Sin promocion",category:"Pequeno electrodomestico",status:"Completada",units:1,revenue:72.59},{year:2025,month:10,channel:"Tienda fisica",userType:"No registrado",promotion:"Sin promocion",category:"Pequeno electrodomestico",status:"Completada",units:1,revenue:254.09},{year:2025,month:11,channel:"Online",userType:"No registrado",promotion:"Sin promocion",category:"Limpieza",status:"Completada",units:1,revenue:387.19},{year:2025,month:11,channel:"Tienda fisica",userType:"No registrado",promotion:"Sin promocion",category:"Limpieza",status:"Completada",units:2,revenue:266.18},{year:2025,month:11,channel:"Online",userType:"No registrado",promotion:"Sin promocion",category:"Limpieza",status:"Completada",units:3,revenue:653.36},{year:2025,month:11,channel:"Tienda fisica",userType:"No registrado",promotion:"Sin promocion",category:"Pequeno electrodomestico",status:"Completada",units:2,revenue:411.38},{year:2025,month:11,channel:"App",userType:"Registrado",promotion:"Sin promocion",category:"Cocina",status:"Completada",units:1,revenue:725.99},{year:2025,month:11,channel:"Tienda fisica",userType:"No registrado",promotion:"Sin promocion",category:"Pequeno electrodomestico",status:"Completada",units:1,revenue:321.85},{year:2025,month:11,channel:"Tienda fisica",userType:"No registrado",promotion:"Sin promocion",category:"Cocina",status:"Completada",units:1,revenue:592.89},{year:2025,month:11,channel:"Tienda fisica",userType:"No registrado",promotion:"Sin promocion",category:"Cocina",status:"Completada",units:1,revenue:750.19},{year:2025,month:11,channel:"App",userType:"No registrado",promotion:"Sin promocion",category:"Cocina",status:"Completada",units:1,revenue:266.19},{year:2025,month:11,channel:"Online",userType:"No registrado",promotion:"Black Friday 2025",category:"Cocina",status:"Completada",units:1,revenue:204.1},{year:2025,month:11,channel:"Marketplace",userType:"No registrado",promotion:"Sin promocion",category:"Limpieza",status:"Completada",units:1,revenue:205.69},{year:2025,month:11,channel:"App",userType:"No registrado",promotion:"Sin promocion",category:"Limpieza",status:"Completada",units:1,revenue:145.19},{year:2025,month:11,channel:"App",userType:"No registrado",promotion:"Sin promocion",category:"Limpieza",status:"Completada",units:1,revenue:338.79},{year:2025,month:12,channel:"Online",userType:"No registrado",promotion:"Sin promocion",category:"Cocina",status:"Completada",units:1,revenue:604.99},{year:2025,month:12,channel:"App",userType:"No registrado",promotion:"Sin promocion",category:"Cocina",status:"Completada",units:1,revenue:423.49},{year:2025,month:12,channel:"Online",userType:"No registrado",promotion:"Sin promocion",category:"Limpieza",status:"Completada",units:2,revenue:774.38},{year:2025,month:12,channel:"App",userType:"No registrado",promotion:"Sin promocion",category:"Cocina",status:"Completada",units:1,revenue:1183.97},{year:2025,month:12,channel:"App",userType:"No registrado",promotion:"Navidad hogar 2025",category:"Cocina",status:"Completada",units:1,revenue:533.95},{year:2025,month:12,channel:"Tienda fisica",userType:"No registrado",promotion:"Sin promocion",category:"Pequeno electrodomestico",status:"Completada",units:1,revenue:326.69},{year:2025,month:12,channel:"Tienda fisica",userType:"No registrado",promotion:"Sin promocion",category:"Cocina",status:"Completada",units:1,revenue:193.59},{year:2026,month:1,channel:"App",userType:"No registrado",promotion:"Sin promocion",category:"Limpieza",status:"Completada",units:1,revenue:145.19},{year:2026,month:1,channel:"Online",userType:"No registrado",promotion:"Sin promocion",category:"Limpieza",status:"Completada",units:1,revenue:133.09},{year:2026,month:1,channel:"Online",userType:"No registrado",promotion:"Sin promocion",category:"Cocina",status:"Completada",units:1,revenue:586.84},{year:2026,month:1,channel:"Online",userType:"No registrado",promotion:"Sin promocion",category:"Cocina",status:"Completada",units:1,revenue:725.99},{year:2026,month:1,channel:"App",userType:"No registrado",promotion:"Sin promocion",category:"Pequeno electrodomestico",status:"Devuelta",units:1,revenue:834.89},{year:2026,month:1,channel:"Online",userType:"No registrado",promotion:"Rebajas enero 2025",category:"Cocina",status:"Completada",units:1,revenue:852.31},{year:2026,month:2,channel:"Online",userType:"No registrado",promotion:"Sin promocion",category:"Cocina",status:"Completada",units:1,revenue:1246.29},{year:2026,month:2,channel:"Tienda fisica",userType:"No registrado",promotion:"Sin promocion",category:"Cocina",status:"Completada",units:2,revenue:2129.58},{year:2026,month:2,channel:"App",userType:"No registrado",promotion:"Sin promocion",category:"Pequeno electrodomestico",status:"Completada",units:1,revenue:629.19},{year:2026,month:2,channel:"Marketplace",userType:"No registrado",promotion:"Sin promocion",category:"Pequeno electrodomestico",status:"Completada",units:2,revenue:677.58},{year:2026,month:2,channel:"Tienda fisica",userType:"No registrado",promotion:"Sin promocion",category:"Limpieza",status:"Completada",units:1,revenue:375.09},{year:2026,month:2,channel:"App",userType:"No registrado",promotion:"Sin promocion",category:"Limpieza",status:"Completada",units:1,revenue:520.29},{year:2026,month:2,channel:"Tienda fisica",userType:"No registrado",promotion:"Sin promocion",category:"Limpieza",status:"Completada",units:2,revenue:2032.78},{year:2026,month:2,channel:"Tienda fisica",userType:"No registrado",promotion:"Sin promocion",category:"Cocina",status:"Completada",units:1,revenue:1064.79},{year:2026,month:3,channel:"App",userType:"No registrado",promotion:"Sin promocion",category:"Limpieza",status:"Completada",units:2,revenue:1766.58},{year:2026,month:3,channel:"Tienda fisica",userType:"No registrado",promotion:"Sin promocion",category:"Limpieza",status:"Completada",units:2,revenue:992.18},{year:2026,month:3,channel:"Online",userType:"No registrado",promotion:"Sin promocion",category:"Pequeno electrodomestico",status:"Completada",units:2,revenue:653.38},{year:2026,month:3,channel:"App",userType:"No registrado",promotion:"Sin promocion",category:"Cocina",status:"Completada",units:1,revenue:508.19},{year:2026,month:3,channel:"Online",userType:"Registrado",promotion:"Sin promocion",category:"Limpieza",status:"Completada",units:1,revenue:169.39},{year:2026,month:3,channel:"App",userType:"No registrado",promotion:"Sin promocion",category:"Pequeno electrodomestico",status:"Completada",units:1,revenue:629.19},{year:2026,month:3,channel:"App",userType:"No registrado",promotion:"Sin promocion",category:"Cocina",status:"Completada",units:1,revenue:508.19},{year:2026,month:3,channel:"Tienda fisica",userType:"No registrado",promotion:"Sin promocion",category:"Cocina",status:"Completada",units:2,revenue:508.18},{year:2026,month:3,channel:"Online",userType:"No registrado",promotion:"Sin promocion",category:"Limpieza",status:"Completada",units:1,revenue:839.12},{year:2026,month:3,channel:"Online",userType:"No registrado",promotion:"Sin promocion",category:"Limpieza",status:"Completada",units:1,revenue:883.29},{year:2026,month:3,channel:"Marketplace",userType:"No registrado",promotion:"Sin promocion",category:"Limpieza",status:"Completada",units:1,revenue:133.09},{year:2026,month:4,channel:"Online",userType:"No registrado",promotion:"Sin promocion",category:"Limpieza",status:"Completada",units:2,revenue:411.38},{year:2026,month:4,channel:"Online",userType:"No registrado",promotion:"Sin promocion",category:"Pequeno electrodomestico",status:"Completada",units:1,revenue:833.31},{year:2026,month:4,channel:"Tienda fisica",userType:"No registrado",promotion:"Sin promocion",category:"Cocina",status:"Completada",units:1,revenue:314.59},{year:2026,month:4,channel:"Online",userType:"No registrado",promotion:"Sin promocion",category:"Limpieza",status:"Completada",units:1,revenue:217.79},{year:2026,month:4,channel:"Tienda fisica",userType:"No registrado",promotion:"Sin promocion",category:"Pequeno electrodomestico",status:"Completada",units:2,revenue:411.38},{year:2026,month:4,channel:"App",userType:"Registrado",promotion:"Sin promocion",category:"Cocina",status:"Completada",units:1,revenue:798.59},{year:2026,month:5,channel:"Tienda fisica",userType:"No registrado",promotion:"Sin promocion",category:"Limpieza",status:"Completada",units:1,revenue:629.19},{year:2026,month:5,channel:"Online",userType:"No registrado",promotion:"Sin promocion",category:"Limpieza",status:"Completada",units:1,revenue:217.79},{year:2026,month:5,channel:"Tienda fisica",userType:"No registrado",promotion:"Sin promocion",category:"Limpieza",status:"Completada",units:1,revenue:205.69},{year:2026,month:5,channel:"App",userType:"No registrado",promotion:"Sin promocion",category:"Cocina",status:"Completada",units:1,revenue:1064.79},{year:2026,month:5,channel:"Online",userType:"No registrado",promotion:"Sin promocion",category:"Pequeno electrodomestico",status:"Completada",units:1,revenue:859.09},{year:2026,month:5,channel:"Online",userType:"No registrado",promotion:"Sin promocion",category:"Pequeno electrodomestico",status:"Completada",units:1,revenue:48.39},{year:2026,month:5,channel:"Tienda fisica",userType:"Registrado",promotion:"Sin promocion",category:"Cocina",status:"Completada",units:1,revenue:508.19},{year:2026,month:6,channel:"Online",userType:"No registrado",promotion:"Sin promocion",category:"Cocina",status:"Completada",units:1,revenue:725.99},{year:2026,month:6,channel:"Tienda fisica",userType:"No registrado",promotion:"Sin promocion",category:"Cocina",status:"Completada",units:1,revenue:315.07}];
-    const SNAPSHOT_FIELDS = ['year', 'month', 'channel', 'userType', 'promotion', 'category', 'status', 'units', 'revenue'];
-    const QUALITY = {
-      status: 'PASS',
-      message: 'Source tables and joins validated before embedding.',
-      checks: ['7 source tables inspected', '200 sales rows embedded', 'Promotion bridge excluded from KPI joins']
+    // Customer names and identifying fields are excluded because they identify individuals and are unnecessary for aggregate sales analysis.
+    const DATA = {
+      extractedAt: '2026-10-20T11:54:43.180206+00:00',
+      channels: ['App','Marketplace','Online','Tienda fisica'],
+      userTypes: ['Invitado','Registrado'],
+      promotions: ['Black Friday 2024','Black Friday 2025','Navidad hogar 2024','Navidad hogar 2025','Rebajas enero 2024','Rebajas enero 2025','Sin promocion'],
+      categories: ['Cocina','Limpieza','Pequeno electrodomestico'],
+      statuses: ['Cancelada','Completada','Devuelta'],
+      control: { salesCents:10259938, salesUnits:224, returnCents:487620, returnUnits:9, registeredCents:571109 },
+      rows: [
+        [2024,1,0,0,6,1,1,1,21779,1],[2024,1,1,0,6,0,1,1,33879,1],[2024,1,2,0,4,2,1,1,13130,1],[2024,1,2,0,6,0,1,5,348475,4],[2024,1,2,0,6,1,1,1,20569,1],[2024,1,3,0,6,0,1,1,106479,1],[2024,1,3,0,6,2,1,1,85909,1],
+        [2024,2,0,0,6,2,1,1,32669,1],[2024,2,3,0,6,0,1,3,160927,3],[2024,2,3,0,6,1,1,2,100428,2],[2024,2,3,0,6,2,1,1,7259,1],[2024,3,0,0,6,2,1,1,4839,1],[2024,4,0,0,6,2,1,1,83331,1],[2024,4,2,0,6,0,1,1,72599,1],[2024,4,2,0,6,2,0,1,36299,1],[2024,4,2,0,6,2,1,1,32669,1],[2024,4,3,0,6,0,2,1,60499,1],[2024,4,3,0,6,1,1,2,116158,1],
+        [2024,5,0,0,6,2,1,1,80984,1],[2024,5,2,0,6,0,1,1,19359,1],[2024,5,3,0,6,0,1,4,257726,4],[2024,5,3,0,6,1,1,2,64128,2],[2024,6,0,0,6,2,1,1,20569,1],[2024,6,1,0,6,0,1,1,59289,1],[2024,6,1,1,6,1,1,1,101639,1],[2024,6,2,0,6,0,1,1,62919,1],[2024,6,2,0,6,2,1,3,45977,3],[2024,7,0,0,6,0,1,1,58514,1],[2024,7,2,0,6,0,1,2,99218,2],[2024,7,2,0,6,2,1,1,25409,1],[2024,7,3,0,6,1,1,1,38719,1],
+        [2024,8,0,0,6,2,1,2,65338,1],[2024,8,1,0,6,2,1,1,85909,1],[2024,8,2,0,6,0,1,2,67758,1],[2024,8,2,0,6,1,1,1,26619,1],[2024,8,2,0,6,2,1,1,7259,1],[2024,8,3,0,6,0,1,1,79859,1],[2024,8,3,0,6,1,1,1,16939,1],[2024,8,3,0,6,2,1,1,6049,1],[2024,9,0,0,6,0,1,1,26619,1],[2024,9,1,1,6,2,2,3,101636,1],[2024,9,2,0,6,1,1,1,26619,1],[2024,9,3,0,6,0,1,2,117368,2],[2024,10,0,0,6,1,1,3,251398,2],[2024,10,1,1,6,1,1,1,88329,1],[2024,10,2,0,6,2,1,1,36299,1],
+        [2024,11,0,0,0,0,1,1,28228,1],[2024,11,1,0,6,0,1,1,75019,1],[2024,11,2,0,0,0,1,2,94539,1],[2024,11,2,0,0,2,1,1,20428,1],[2024,11,2,0,6,0,1,3,188756,1],[2024,11,2,0,6,1,1,2,54448,2],[2024,11,2,0,6,2,1,1,33879,1],[2024,11,3,0,0,0,1,1,28228,1],[2024,11,3,0,6,1,1,1,38719,1],[2024,12,0,0,6,1,1,1,49609,1],[2024,12,0,0,6,2,1,1,7259,1],[2024,12,1,0,6,1,1,3,90989,2],[2024,12,1,0,6,2,1,1,83489,1],[2024,12,2,0,6,1,1,1,24199,1],[2024,12,2,0,6,2,1,1,6049,1],[2024,12,3,0,2,0,1,1,33792,1],[2024,12,3,0,6,0,1,1,50819,1],
+        [2025,1,0,0,5,0,1,1,29071,1],[2025,1,0,0,6,2,1,1,32669,1],[2025,1,3,0,6,0,1,1,19359,1],[2025,1,3,0,6,1,1,2,35088,2],[2025,2,0,0,6,0,1,1,77463,1],[2025,2,0,0,6,1,1,1,48120,1],[2025,2,1,0,6,0,1,1,79859,1],[2025,2,1,0,6,2,1,1,32669,1],[2025,2,2,0,6,1,1,2,116158,1],[2025,3,2,0,6,0,1,1,25409,1],[2025,3,2,0,6,2,1,1,20569,1],[2025,3,3,0,6,2,1,1,88329,1],[2025,4,0,0,6,0,1,1,56869,1],[2025,4,1,0,6,1,1,1,49427,1],[2025,4,2,0,6,0,1,1,75019,1],[2025,4,2,0,6,2,1,1,33879,1],[2025,4,3,0,6,0,1,2,162138,2],
+        [2025,5,0,0,6,1,1,1,14519,1],[2025,5,1,0,6,0,1,1,56869,1],[2025,5,2,0,6,0,1,2,122208,2],[2025,5,2,0,6,1,1,1,16939,1],[2025,5,3,0,6,1,1,1,26619,1],[2025,6,0,0,6,0,1,1,33879,1],[2025,6,0,0,6,1,1,1,58079,1],[2025,6,1,0,6,0,1,2,125838,1],[2025,6,3,0,6,0,1,1,36299,1],[2025,6,3,0,6,0,2,1,72599,1],
+        [2025,7,0,0,6,0,1,2,101638,2],[2025,7,0,0,6,1,1,1,101639,1],[2025,7,1,0,6,0,1,1,33879,1],[2025,7,1,0,6,1,1,1,33879,1],[2025,7,1,0,6,2,1,1,32669,1],[2025,7,2,0,6,0,2,1,37509,1],[2025,7,2,0,6,1,1,2,77438,1],[2025,7,3,0,6,0,1,1,26619,1],[2025,7,3,0,6,0,2,1,56869,1],[2025,7,3,0,6,1,1,1,16939,1],[2025,7,3,1,6,0,1,2,50818,1],[2025,8,0,0,6,0,1,3,127046,1],[2025,8,0,0,6,1,1,2,43558,1],[2025,8,1,0,6,0,1,1,60499,1],[2025,8,2,0,6,1,1,1,33879,1],[2025,8,2,0,6,2,1,1,6751,1],[2025,8,2,1,6,2,1,2,72598,1],[2025,8,3,1,6,1,1,1,37509,1],
+        [2025,9,2,0,6,0,1,2,136728,2],[2025,9,3,0,6,0,1,2,78648,2],[2025,9,3,0,6,1,1,2,29038,1],[2025,9,3,0,6,2,1,1,6049,1],[2025,10,1,0,6,0,1,1,42349,1],[2025,10,1,0,6,0,2,1,75019,1],[2025,10,3,0,6,0,1,1,59289,1],[2025,10,3,0,6,2,1,2,32668,2],[2025,11,0,0,6,0,1,1,26619,1],[2025,11,0,0,6,1,1,2,48398,2],[2025,11,0,1,6,0,1,1,72599,1],[2025,11,1,0,6,1,1,1,20569,1],[2025,11,2,0,1,0,1,1,20410,1],[2025,11,2,0,6,1,1,4,104055,2],[2025,11,3,0,6,0,1,2,134308,2],[2025,11,3,0,6,1,1,2,26618,1],[2025,11,3,0,6,2,1,3,73323,2],
+        [2025,12,0,0,3,0,1,1,53395,1],[2025,12,0,0,6,0,1,2,160746,2],[2025,12,2,0,6,0,1,1,60499,1],[2025,12,2,0,6,1,1,2,77438,1],[2025,12,3,0,6,0,1,1,19359,1],[2025,12,3,0,6,2,1,1,32669,1],[2026,1,0,0,6,1,1,1,14519,1],[2026,1,0,0,6,2,2,1,83489,1],[2026,1,2,0,5,0,1,1,85231,1],[2026,1,2,0,6,0,1,2,131283,2],[2026,1,2,0,6,1,1,1,13309,1],
+        [2026,2,0,0,6,1,1,1,52029,1],[2026,2,0,0,6,2,1,1,62919,1],[2026,2,1,0,6,2,1,2,67758,1],[2026,2,2,0,6,0,1,1,124629,1],[2026,2,3,0,6,0,1,3,319437,2],[2026,2,3,0,6,1,1,3,240787,2],[2026,3,0,0,6,0,1,2,101638,2],[2026,3,0,0,6,1,1,2,176658,1],[2026,3,0,0,6,2,1,1,62919,1],[2026,3,1,0,6,1,1,1,13309,1],[2026,3,2,0,6,1,1,2,172241,2],[2026,3,2,0,6,2,1,2,65338,1],[2026,3,2,1,6,1,1,1,16939,1],[2026,3,3,0,6,0,1,2,50818,1],[2026,3,3,0,6,1,1,2,99218,1],
+        [2026,4,0,1,6,0,1,1,79859,1],[2026,4,2,0,6,1,1,3,62917,2],[2026,4,2,0,6,2,1,1,83331,1],[2026,4,3,0,6,0,1,1,31459,1],[2026,4,3,0,6,2,1,2,41138,1],[2026,5,0,0,6,0,1,1,106479,1],[2026,5,2,0,6,1,1,1,21779,1],[2026,5,2,0,6,2,1,2,90748,2],[2026,5,3,0,6,1,1,2,83488,2],[2026,5,3,1,6,0,1,1,50819,1],[2026,6,2,0,6,0,1,1,72599,1],[2026,6,3,0,6,0,1,1,31507,1]
+      ]
     };
-
+    const SNAPSHOT = DATA.rows.map(([year,month,channel,userType,promotion,category,status,units,cents,lines]) => ({
+      year,month,channel:DATA.channels[channel],userType:DATA.userTypes[userType],promotion:DATA.promotions[promotion],
+      category:DATA.categories[category],status:DATA.statuses[status],units,revenue:cents/100,lines
+    }));
+    const SOURCE_TABLES = [
+      ['fact_ventas',200,'PASS','Medidas y claves verificadas; 1 excepciÃ³n temporal aceptada por el responsable, sin exclusiones'],
+      ['dim_articulos',57,'PASS','CategorÃ­as, precios y claves verificados'],
+      ['dim_canal',6,'PASS','Claves y etiquetas verificadas; 4 nombres de canal distintos'],
+      ['dim_fecha',174,'PASS','Fechas coherentes con fecha_venta'],
+      ['dim_usuarios',11,'PASS','Claves y clasificaciÃ³n registrado/invitado verificadas'],
+      ['dim_promociones',7,'PASS','Claves, fechas y descuentos vÃ¡lidos en la dimensiÃ³n'],
+      ['fact_promociones_articulos',124,'PASS','Sin claves ni pares duplicados ni referencias huÃ©rfanas']
+    ];
+    const COLORS = ['#146dad','#237655','#707d89','#378c9b','#586d45','#465997'];
+    const fmtMoney = value => new Intl.NumberFormat('es-ES',{style:'currency',currency:'EUR'}).format(value);
+    const fmtNum = value => new Intl.NumberFormat('es-ES').format(value);
+    const fmtPct = value => value === null ? 'N/D' : `${value.toFixed(1)} %`;
+    const escapeText = value => String(value).replace(/[&<>"']/g, character => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[character]));
     function groupSum(rows, keyFn, valueFn) {
       const map = new Map();
-      for (const row of rows) {
-        const key = keyFn(row);
-        map.set(key, (map.get(key) || 0) + valueFn(row));
-      }
-      return [...map.entries()].map(([label, value]) => ({ label, value })).sort((a,b) => b.value - a.value);
+      for (const row of rows) { const key = keyFn(row); map.set(key,(map.get(key)||0)+Math.round(valueFn(row)*100)); }
+      return [...map].map(([label,cents]) => ({label,value:cents/100})).sort((first,second) => second.value-first.value);
     }
-
+    function calculateDashboard(rows, filters = {}) {
+      const matches = (values,value) => !values?.length || values.map(String).includes(String(value));
+      const nonDate = rows.filter(row => (!filters.channel || row.channel===filters.channel) && (!filters.userType || row.userType===filters.userType) && (!filters.promotion || row.promotion===filters.promotion));
+      const filtered = nonDate.filter(row => matches(filters.years,row.year) && matches(filters.months,row.month));
+      const completed = filtered.filter(row => row.status==='Completada');
+      const returned = filtered.filter(row => row.status==='Devuelta');
+      const money = items => items.reduce((total,row) => total+Math.round(row.revenue*100),0)/100;
+      const revenue = money(completed);
+      const years = filters.years?.length ? filters.years.map(Number).sort() : [...new Set(rows.map(row => row.year))].sort();
+      const coverage = new Set(rows.map(row => row.year*12+row.month-1));
+      const currentPeriod = filtered.length ? Math.max(...filtered.map(row => row.year*12+row.month-1)) : null;
+      const periodRevenue = period => coverage.has(period) ? money(nonDate.filter(row => row.year*12+row.month-1===period && row.status==='Completada')) : null;
+      const currentRevenue = currentPeriod===null ? null : periodRevenue(currentPeriod);
+      const previousRevenue = currentPeriod===null ? null : periodRevenue(currentPeriod-1);
+      const difference = previousRevenue===null ? null : currentRevenue-previousRevenue;
+      return { filtered,completed,years,revenue,
+        units:completed.reduce((total,row) => total+row.units,0),
+        returnRevenue:money(returned),returnUnits:returned.reduce((total,row) => total+row.units,0),
+        registeredPct:revenue ? money(completed.filter(row => row.userType==='Registrado'))/revenue*100 : null,
+        byChannel:groupSum(completed,row=>row.channel,row=>row.revenue),
+        byPromotion:groupSum(completed,row=>row.promotion,row=>row.revenue),
+        byUser:['Registrado','Invitado'].map(label=>({label,value:money(completed.filter(row=>row.userType===label))})),
+        byCategory:groupSum(completed,row=>row.category,row=>row.revenue).slice(0,8),
+        trend:years.map(year=>({year,values:Array.from({length:12},(_,index)=> matches(filters.months,index+1) && coverage.has(year*12+index) ? money(completed.filter(row=>row.year===year && row.month===index+1)) : null)})),
+        comparison:{currentPeriod,currentRevenue,previousRevenue,difference,change:previousRevenue ? difference/previousRevenue*100 : null}
+      };
+    }
+    function populateSelect(id,values) {
+      const select = document.getElementById(id);
+      for (const value of values) { const option = document.createElement('option'); option.value=String(value); option.textContent=String(value); select.append(option); }
+    }
     function selectedValues(id) {
-      return [...document.querySelector(`#${id}`).selectedOptions].map(option => option.value).filter(value => value !== 'all');
+      return [...document.getElementById(id).selectedOptions].map(option=>option.value).filter(value=>value!=='all');
     }
-
-    function populateSelect(id, values) {
-      const select = document.querySelector(`#${id}`);
-      if (select.options.length > 1) return;
-      values.forEach(value => select.insertAdjacentHTML('beforeend', `<option value="${value}">${value}</option>`));
+    function renderTrend(result) {
+      const maximum = Math.max(...result.trend.flatMap(series=>series.values.filter(value=>value!==null)),1);
+      const positionX = index => 75+index*57;
+      const positionY = value => 265-value/maximum*210;
+      const ticks = Array.from({length:5},(_,index)=>{
+        const value=maximum*index/4; const position=positionY(value);
+        return `<line x1="75" x2="702" y1="${position}" y2="${position}" stroke="#d8e1e8"/><text x="65" y="${position+4}" text-anchor="end" fill="#596977" font-size="12">${escapeText(fmtNum(Math.round(value)))}</text>`;
+      }).join('');
+      document.getElementById('trendLegend').innerHTML=result.years.map((year,index)=>`<span><i class="swatch" style="--swatch:${COLORS[index%COLORS.length]}"></i>${year}</span>`).join('');
+      const paths=result.trend.map((series,seriesIndex)=>{
+        let connected=false;
+        const path=series.values.map((value,index)=>{
+          if(value===null) { connected=false; return ''; }
+          const command=connected?'L':'M'; connected=true;
+          return `${command}${positionX(index)},${positionY(value)}`;
+        }).join(' ');
+        const dots=series.values.map((value,index)=>value===null?'':`<circle cx="${positionX(index)}" cy="${positionY(value)}" r="3.5"><title>${series.year}, mes ${index+1}: ${escapeText(fmtMoney(value))}</title></circle>`).join('');
+        return `<g fill="${COLORS[seriesIndex%COLORS.length]}" stroke="${COLORS[seriesIndex%COLORS.length]}"><path d="${path}" fill="none" stroke-width="2.5"/>${dots}</g>`;
+      }).join('');
+      document.getElementById('trendChart').innerHTML=`<title>Ingresos mensuales por aÃ±o, en euros</title>${ticks}${Array.from({length:12},(_,index)=>`<text x="${positionX(index)}" y="290" text-anchor="middle" fill="#596977" font-size="13">${index+1}</text>`).join('')}${paths}${result.revenue===0?'<text x="400" y="35" text-anchor="middle" fill="#596977" font-size="14">Sin ventas completadas para esta selecciÃ³n</text>':''}`;
+      document.getElementById('trendValues').innerHTML=`<table><thead><tr><th>Mes</th>${result.years.map(year=>`<th>${year}</th>`).join('')}</tr></thead><tbody>${Array.from({length:12},(_,index)=>`<tr><td>${index+1}</td>${result.trend.map(series=>`<td>${series.values[index]===null?'N/D':escapeText(fmtMoney(series.values[index]))}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
     }
-
-    function formatBarLabel(label) { return label ? String(label).slice(0, 10) : 'N/D'; }
-
-    function renderBars(el, items) {
-      const root = document.querySelector(el);
-      const max = Math.max(...items.map(i => i.value), 1);
-      root.innerHTML = items.map(i => `
-        <div class="bar-item">
-          <div class="bar" style="height:${Math.max(18, (i.value / max) * 240)}px"></div>
-          <div class="bar-label">${formatBarLabel(i.label)}</div>
-        </div>
-      `).join('');
+    function renderDonut(id,items) {
+      const root=document.getElementById(id);
+      const total=items.reduce((sum,item)=>sum+item.value,0);
+      if(!total) { root.innerHTML='<p class="empty">Sin ventas completadas para esta selecciÃ³n</p>'; return; }
+      let offset=0;
+      const arcs=items.map((item,index)=>{
+        const percent=item.value/total*100;
+        const arc=`<circle cx="90" cy="90" r="65" fill="none" stroke="${COLORS[index%COLORS.length]}" stroke-width="23" pathLength="100" stroke-dasharray="${percent} ${100-percent}" stroke-dashoffset="${-offset}" transform="rotate(-90 90 90)"><title>${escapeText(item.label)}: ${escapeText(fmtMoney(item.value))}</title></circle>`;
+        offset+=percent; return arc;
+      }).join('');
+      root.innerHTML=`<div class="donut-layout"><svg class="donut" viewBox="0 0 180 180" role="img" aria-label="DistribuciÃ³n de ingresos">${arcs}<text x="90" y="88" text-anchor="middle" font-size="15" fill="#25313c">Ingresos</text><text x="90" y="110" text-anchor="middle" font-size="13" fill="#596977">100 %</text></svg><ul class="distribution">${items.map((item,index)=>`<li><span><i class="swatch" style="--swatch:${COLORS[index%COLORS.length]}"></i>${escapeText(item.label)}</span><strong>${escapeText(fmtMoney(item.value))}<small>${fmtPct(item.value/total*100)}</small></strong></li>`).join('')}</ul></div>`;
     }
-
-    function renderTrend(rows) {
-      const root = document.querySelector('#trendChart');
-      const years = [...new Set(rows.map(row => row.year))].sort();
-      const colors = ['#1677c8', '#23845b', '#b27612'];
-      const max = Math.max(...rows.map(row => row.value), 1);
-      const points = year => Array.from({ length: 12 }, (_, index) => rows.find(row => row.year === year && row.month === index + 1)?.value || 0);
-      const x = month => 42 + (month - 1) * 58;
-      const y = value => 240 - (value / max) * 190;
-      root.innerHTML = `<line x1="42" y1="240" x2="680" y2="240" stroke="#d8e1ec"/>${Array.from({ length: 12 }, (_, index) => `<text x="${x(index + 1)}" y="262" text-anchor="middle" fill="#60748a" font-size="11">${index + 1}</text>`).join('')}${years.map((year, yearIndex) => { const values = points(year); const path = values.map((value, index) => `${index ? 'L' : 'M'} ${x(index + 1)} ${y(value)}`).join(' '); return `<path d="${path}" fill="none" stroke="${colors[yearIndex % colors.length]}" stroke-width="3"/><text x="${520 + yearIndex * 54}" y="22" fill="${colors[yearIndex % colors.length]}" font-size="12">${year}</text>`; }).join('')}`;
+    function renderCategories(items) {
+      const maximum=Math.max(...items.map(item=>item.value),1);
+      document.getElementById('categoryChart').innerHTML=items.length?items.map(item=>`<div><div class="bar-heading"><span>${escapeText(item.label)}</span><strong>${escapeText(fmtMoney(item.value))}</strong></div><div class="bar-track"><div class="bar-fill" style="--width:${item.value/maximum*100}%"></div></div></div>`).join(''):'<p class="empty">Sin ventas completadas para esta selecciÃ³n</p>';
     }
-
-    function renderLegend(el, items, colors, withDonut = false) {
-      const root = document.querySelector(el);
-      const total = items.reduce((sum, item) => sum + item.value, 0) || 1;
-      const stops = items.reduce((parts, item, index) => { const start = parts.end; const end = start + item.value / total * 360; parts.values.push(`${colors[index % colors.length]} ${start}deg ${end}deg`); parts.end = end; return parts; }, { values: [], end: 0 }).values.join(',');
-      root.innerHTML = `${withDonut ? `<div class="donut" style="background:conic-gradient(${stops})" aria-label="Distribucion agregada"></div>` : ''}${items.map((i, idx) => `
-        <div class="legend-row">
-          <div><span class="dot" style="background:${colors[idx % colors.length]}"></span>${i.label}</div>
-          <strong>${fmtMoney(i.value)}</strong>
-        </div>
-      `).join('')}`;
+    function renderPromotions(items) {
+      const campaigns=items.filter(item=>item.label!=='Sin promocion');
+      const noPromotion=items.find(item=>item.label==='Sin promocion')?.value ?? 0;
+      const maximum=Math.max(...campaigns.map(item=>item.value),1);
+      const bars=campaigns.length?`<div class="promotion-scroll"><div class="vertical-bars" style="--columns:${campaigns.length}" role="list" aria-label="Ingresos por promoci&oacute;n">${campaigns.map(item=>`<div class="vertical-item" role="listitem"><strong>${escapeText(fmtMoney(item.value))}</strong><div class="vertical-track" aria-hidden="true"><div class="vertical-fill" style="--height:${item.value/maximum*100}%"></div></div><span class="vertical-label">${escapeText(item.label)}</span></div>`).join('')}</div></div>`:'<p class="empty">Sin ventas completadas con promociones para esta selecci&oacute;n</p>';
+      document.getElementById('promoList').innerHTML=`<p class="no-promotion"><span>Sin promoci&oacute;n</span><strong>${escapeText(fmtMoney(noPromotion))}</strong></p>${bars}`;
     }
-
-    function renderTable(el, items) {
-      const root = document.querySelector(el);
-      root.innerHTML = items.map(i => `
-        <tr>
-          <td>${i.producto}</td>
-          <td>${i.categoria}</td>
-          <td>${fmtNum(i.unidades)}</td>
-          <td>${fmtMoney(i.ingresos)}</td>
-          <td>${fmtMoney(i.margen)}</td>
-          <td><span class="status ${i.estadoClass}">${i.estado}</span></td>
-        </tr>
-      `).join('');
-    }
-
     function boot() {
-      populateSelect('yearFilter', [...new Set(SNAPSHOT.map(row => row.year))].sort());
-      populateSelect('monthFilter', [...new Set(SNAPSHOT.map(row => row.month))].sort((a, b) => a - b));
-      populateSelect('channelFilter', [...new Set(SNAPSHOT.map(row => row.channel))].sort());
-      populateSelect('userFilter', [...new Set(SNAPSHOT.map(row => row.userType))].sort());
-      populateSelect('promotionFilter', [...new Set(SNAPSHOT.map(row => row.promotion))].sort());
-      const years = selectedValues('yearFilter');
-      const months = selectedValues('monthFilter');
-      const channel = document.querySelector('#channelFilter').value;
-      const userType = document.querySelector('#userFilter').value;
-      const promotion = document.querySelector('#promotionFilter').value;
-      const nonDateFiltered = SNAPSHOT.filter(row =>
-        (channel === 'all' || row.channel === channel) &&
-        (userType === 'all' || row.userType === userType) &&
-        (promotion === 'all' || row.promotion === promotion)
-      );
-      const filtered = nonDateFiltered.filter(row =>
-        (!years.length || years.includes(String(row.year))) &&
-        (!months.length || months.includes(String(row.month)))
-      );
-      const completed = filtered.filter(v => v.status === 'Completada');
-      const returns = filtered.filter(v => v.status === 'Devuelta');
-      const revenue = completed.reduce((total, row) => total + Number(row.revenue || 0), 0);
-      const units = completed.reduce((total, row) => total + Number(row.units || 0), 0);
-      const returnRevenue = returns.reduce((total, row) => total + Number(row.revenue || 0), 0);
-      const returnUnits = returns.reduce((total, row) => total + Number(row.units || 0), 0);
-      const registeredCount = completed.filter(row => row.userType === 'Registrado').length;
-      const registeredPct = completed.length ? registeredCount / completed.length * 100 : 0;
-
-      const sumCompletedRevenue = rows => rows.filter(row => row.status === 'Completada')
-        .reduce((total, row) => total + Number(row.revenue || 0), 0);
-      const currentPeriod = filtered.reduce((latest, row) => {
-        const period = row.year * 12 + row.month - 1;
-        return !latest || period > latest.period ? { year: row.year, month: row.month, period } : latest;
-      }, null);
-      const currentMonthRevenue = currentPeriod
-        ? sumCompletedRevenue(nonDateFiltered.filter(row => row.year === currentPeriod.year && row.month === currentPeriod.month))
-        : null;
-      const previousPeriod = currentPeriod ? currentPeriod.period - 1 : null;
-      const previousMonthRevenue = currentPeriod
-        ? sumCompletedRevenue(nonDateFiltered.filter(row => row.year * 12 + row.month - 1 === previousPeriod))
-        : null;
-      const revenueDifference = currentPeriod ? currentMonthRevenue - previousMonthRevenue : null;
-      const revenueChange = currentPeriod
-        ? (previousMonthRevenue === 0 ? 'N/A' : fmtPct((revenueDifference / previousMonthRevenue) * 100))
-        : null;
-
-      const monthMap = new Map();
-      for (const v of completed) {
-        const key = `${v.year}-${v.month}`;
-        monthMap.set(key, (monthMap.get(key) || 0) + Number(v.revenue || 0));
-      }
-      const trend = [...monthMap.entries()].map(([key, value]) => { const [year, month] = key.split('-').map(Number); return { year, month, value }; });
-
-      const byChannel = groupSum(completed, row => row.channel, row => Number(row.revenue || 0)).slice(0, 6);
-      const byPromo = groupSum(completed, row => row.promotion, row => Number(row.revenue || 0)).slice(0, 6);
-      const byUser = groupSum(completed, row => row.userType, row => Number(row.revenue || 0));
-      const channelLeader = byChannel[0] || { label: 'Sin datos', value: 0 };
-      const promoLeader = byPromo[0] || { label: 'Sin datos', value: 0 };
-
-      const byCategory = groupSum(completed, row => row.category, row => Number(row.revenue || 0)).slice(0, 8);
-      const revenueShare = revenue ? (channelLeader.value / revenue) * 100 : 0;
-      const trendDelta = trend.length > 1 ? ((trend[trend.length - 1].value - trend[0].value) / Math.max(trend[0].value, 1)) * 100 : 0;
-
-      document.querySelector('#kpiRevenue').textContent = currentPeriod ? fmtMoney(currentMonthRevenue) : fmtMoney(revenue);
-      document.querySelector('#kpiRevenuePrevious').textContent = currentPeriod ? fmtMoney(previousMonthRevenue) : '-';
-      document.querySelector('#kpiRevenueDifference').textContent = currentPeriod ? fmtMoney(revenueDifference) : '-';
-      document.querySelector('#kpiRevenueChange').textContent = currentPeriod ? revenueChange : '-';
-      document.querySelector('#kpiUnits').textContent = fmtNum(units);
-      document.querySelector('#kpiReturnsRevenue').textContent = fmtMoney(returnRevenue);
-      document.querySelector('#kpiReturnsUnits').textContent = fmtNum(returnUnits);
-      document.querySelector('#kpiRegistered').textContent = fmtPct(registeredPct);
-
-      document.querySelector('#kpiRevenueTrend').textContent = `${fmtNum(completed.length)} ventas completadas`;
-      document.querySelector('#kpiUnitsTrend').textContent = `${fmtNum(units)} unidades vendidas`;
-      document.querySelector('#kpiReturnsTrend').textContent = `${fmtNum(returns.length)} devoluciones`;
-      document.querySelector('#kpiReturnsUnitsTrend').textContent = 'Unidades devueltas';
-      document.querySelector('#kpiRegisteredTrend').textContent = `${fmtNum(registeredCount)} ventas de usuario registrado`;
-
-      document.querySelector('#insightChannel').textContent = channelLeader.label;
-      document.querySelector('#insightChannelValue').textContent = `${fmtMoney(channelLeader.value)} · ${fmtPct(revenueShare)}`;
-      document.querySelector('#insightPromo').textContent = promoLeader.label;
-      document.querySelector('#insightPromoValue').textContent = `${fmtMoney(promoLeader.value)} de ingresos generados`;
-      document.querySelector('#insightProduct').textContent = byCategory[0]?.label || 'Sin datos';
-      document.querySelector('#insightProductValue').textContent = byCategory[0] ? fmtMoney(byCategory[0].value) : 'Sin datos';
-
-      document.querySelector('#trendLabel').textContent = `${new Set(trend.map(item => item.year)).size} años · ${trendDelta >= 0 ? '+' : ''}${fmtPct(trendDelta)}`;
-      renderTrend(trend);
-      renderBars('#categoryChart', byCategory.length ? byCategory : [{ label:'Sin datos', value: 1 }]);
-      renderLegend('#channelList', byChannel, ['#1677c8', '#23845b', '#b27612', '#bd4051', '#60748a', '#3a9bdd'], true);
-      document.querySelector('#promoList').className = 'bars';
-      renderBars('#promoList', byPromo.length ? byPromo : [{ label:'Sin datos', value: 1 }]);
-      renderLegend('#userList', byUser, ['#1677c8', '#23845b'], true);
-
-      renderTable('#topProducts', byCategory.map((item, index) => ({ producto: item.label, categoria: item.label, unidades: 0, ingresos: item.value, margen: 0, estado: index < 3 ? 'Alto' : 'Medio', estadoClass: index < 3 ? 'ok' : 'mid' })));
-      document.querySelector('#qualityStatus').textContent = QUALITY.status;
-      document.querySelector('#qualityStatus').className = `status ${QUALITY.status === 'PASS' ? 'ok' : 'bad'}`;
-      document.querySelector('#qualityChecks').innerHTML = QUALITY.checks.map(check => `<span>${check}</span>`).join('');
+      const scalar = id => document.getElementById(id).value==='all' ? undefined : document.getElementById(id).value;
+      const filters={years:selectedValues('yearFilter'),months:selectedValues('monthFilter'),channel:scalar('channelFilter'),userType:scalar('userFilter'),promotion:scalar('promotionFilter')};
+      const result=calculateDashboard(SNAPSHOT,filters);
+      document.getElementById('kpiRevenue').textContent=fmtMoney(result.revenue);
+      document.getElementById('kpiUnits').textContent=fmtNum(result.units);
+      document.getElementById('kpiReturnsRevenue').textContent=fmtMoney(result.returnRevenue);
+      document.getElementById('kpiReturnsUnits').textContent=fmtNum(result.returnUnits);
+      document.getElementById('kpiRegistered').textContent=fmtPct(result.registeredPct);
+      document.getElementById('selectionLabel').textContent=`${fmtNum(result.filtered.reduce((total,row)=>total+row.lines,0))} lÃ­neas seleccionadas Â· AÃ±os: ${result.years.join(', ')} Â· ${filters.months.length?`Meses: ${filters.months.join(', ')}`:'Todos los meses'}`;
+      const comparison=result.comparison;
+      const period= comparison.currentPeriod;
+      const periodLabel=period===null?'':`${String(period%12+1).padStart(2,'0')}/${Math.floor(period/12)}`;
+      document.getElementById('comparison').textContent=period===null?'ComparaciÃ³n mensual no disponible: selecciÃ³n sin registros.':`Ãšltimo mes con registros: ${periodLabel} (${fmtMoney(comparison.currentRevenue)}). Mes anterior: ${comparison.previousRevenue===null?'N/D':fmtMoney(comparison.previousRevenue)}. Diferencia: ${comparison.difference===null?'N/D':fmtMoney(comparison.difference)}. VariaciÃ³n: ${fmtPct(comparison.change)}.${period===2026*12+5?' Mes parcial.':''}`;
+      renderTrend(result); renderDonut('channelList',result.byChannel); renderDonut('userList',result.byUser); renderCategories(result.byCategory);
+      renderPromotions(result.byPromotion);
     }
-
-    document.querySelector('#reload').addEventListener('click', () => boot().catch(err => alert(err.message)));
-    ['yearFilter', 'monthFilter', 'channelFilter', 'userFilter', 'promotionFilter'].forEach(id => document.querySelector(`#${id}`).addEventListener('change', boot));
-    boot();
+    function initialize() {
+      if(DATA.rows.length!==163 || SNAPSHOT.reduce((total,row)=>total+row.lines,0)!==200) throw new Error('InstantÃ¡nea incompleta');
+      const totals=calculateDashboard(SNAPSHOT);
+      if(Math.round(totals.revenue*100)!==DATA.control.salesCents || totals.units!==DATA.control.salesUnits || Math.round(totals.returnRevenue*100)!==DATA.control.returnCents || totals.returnUnits!==DATA.control.returnUnits) throw new Error('La instantÃ¡nea no concuerda con el origen');
+      populateSelect('yearFilter',[...new Set(SNAPSHOT.map(row=>row.year))].sort());
+      populateSelect('monthFilter',Array.from({length:12},(_,index)=>index+1));
+      populateSelect('channelFilter',DATA.channels); populateSelect('userFilter',DATA.userTypes); populateSelect('promotionFilter',DATA.promotions);
+      document.getElementById('snapshotMeta').textContent=`Supabase Â· ExtraÃ­do el ${new Intl.DateTimeFormat('es-ES',{dateStyle:'medium',timeStyle:'short',timeZone:'UTC'}).format(new Date(DATA.extractedAt))} UTC`;
+      document.getElementById('qualityChecks').innerHTML=SOURCE_TABLES.map(([name,count,status,note])=>`<tr><td>${name}</td><td>${count}</td><td class="${status==='PASS'?'pass':'fail'}">${status}</td><td>${escapeText(note)}</td></tr>`).join('');
+      document.getElementById('footerCoverage').textContent='200 lÃ­neas Â· 163 grupos Â· 01/01/2024 a 11/06/2026';
+      boot();
+    }
+    document.querySelector('#reload').addEventListener('click',()=>{
+      for(const id of ['yearFilter','monthFilter','channelFilter','userFilter','promotionFilter']) document.getElementById(id).selectedIndex=0;
+      boot();
+    });
+    for(const id of ['yearFilter','monthFilter','channelFilter','userFilter','promotionFilter']) document.getElementById(id).addEventListener('change',()=>{
+      const select=document.getElementById(id);
+      if(select.multiple && selectedValues(id).length) select.options[0].selected=false;
+      boot();
+    });
+    try { initialize(); } catch(error) {
+      document.getElementById('qualityStatus').textContent='FAIL: instantÃ¡nea no verificada';
+      document.getElementById('selectionLabel').textContent=error.message;
+      for(const element of document.querySelectorAll('.kpi strong')) element.textContent='N/D';
+      for(const element of document.querySelectorAll('select,button')) element.disabled=true;
+    }
   </script>
 </body>
 </html>
+

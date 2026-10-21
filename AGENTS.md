@@ -1,57 +1,27 @@
-# AGENTS.md
-
-## Project Overview
-
-This repository contains a standalone retail sales dashboard in [dashboard.html](dashboard.html). The main goal is to build and iterate on a business-facing sales dashboard without introducing unnecessary dependencies. Dashboard data is sourced from the configured Supabase MCP, validated, and embedded into the self-contained HTML output.
-
 ## Business Context
 
 This project is a retail sales analytics dashboard for business users.
 
 The primary goal is to help business stakeholders understand sales performance through reliable KPIs, interactive visualizations, and actionable insights.
 
-## Repository Entry Points
-
-Use this file as the main entry point for future agents working in this repository. The supporting guidance lives in:
-
-- Instructions: [.github/instructions/dashboard.instructions.md](.github/instructions/dashboard.instructions.md)
-- Skills: [.agents/skills/](.agents/skills/) and the registry snapshot in [skills-lock.json](skills-lock.json)
-- MCP configuration: [.vscode/mcp.json](.vscode/mcp.json)
+The dashboard is a self-contained HTML file with an embedded, validated data snapshot. Keep that architecture unless a different approach is explicitly approved.
 
 ## Agent Guidance
 
 When working on this project:
 
 - Prioritize business insights over visual complexity.
-- Treat [.github/instructions/dashboard.instructions.md](.github/instructions/dashboard.instructions.md) as the governing source for dashboard data, privacy, validation, and publishing rules.
-- Keep the current standalone HTML architecture unless a different technical approach is explicitly requested.
+- Validate data quality before calculating or presenting KPIs.
+- Identify the Supabase tables used for each metric.
+- Report data-quality limitations before making recommendations.
+- Prefer simple, business-readable dashboards with interactive filtering.
 - Avoid introducing external dependencies unless explicitly approved.
 
-## Available Skills
+## Data Access and Quality
 
-Use skills for task-specific guidance, design patterns, or domain workflows. They are the right tool when the problem is about how to think, structure, or present work rather than where to fetch data from.
-
-- [frontend-design](.agents/skills/frontend-design/SKILL.md): use when shaping the UI, layout, typography, motion, or visual identity of the dashboard.
-- [kpi-dashboard-design](.agents/skills/kpi-dashboard-design/SKILL.md): use when selecting KPIs, organizing metric hierarchies, comparing business measures, or checking dashboard logic against KPI best practices.
-
-## Available MCP Servers
-
-Use MCPs when the task needs live access to an external system, source-of-truth data, or repository-backed metadata that is not already in the local files.
-
-- [confluence](.vscode/mcp.json): read and search Confluence content for project documentation, page content, attachments, and related page metadata.
-- [supabase](.vscode/mcp.json): run read-only database operations against the Supabase project for schema inspection and SQL reads.
-
-## Skill Versus MCP
-
-Prefer a skill when the task is about guidance, judgment, or a repeatable workflow, such as choosing KPIs or designing a screen.
-
-Prefer an MCP when the task needs current data, repository-backed records, or verification against an external system, such as reading a Confluence page or checking Supabase tables.
-
-Use both when helpful: a skill can define the approach, and an MCP can supply the evidence.
-
-## Dashboard Instructions
-
-Read and follow [.github/instructions/dashboard.instructions.md](.github/instructions/dashboard.instructions.md) before generating dashboard content or related documentation. It is the single source of truth for the mandatory data source, privacy, data-quality, self-contained HTML, and Confluence publishing constraints.
+- Use the configured Supabase MCP in read-only mode as the authoritative data source. CSVs in `resources/` are for the initial learning exercise only; do not use them anymore.
+- Follow [.github/instructions/dashboard.instructions.md](.github/instructions/dashboard.instructions.md) for privacy, source-table validation, join-cardinality checks, snapshot requirements, and publishing rules.
+- Before presenting results, check missing values, referential integrity, anomalous values, and limitations that could affect KPI reliability.
 
 ## Business KPIs
 
@@ -65,8 +35,24 @@ When relevant, prioritize metrics such as:
 - Conversion
 - Units Sold
 
-## Local Validation
+## Data Quality
 
-- For browser-only changes, validate by serving the repo with a local HTTP server and opening the dashboard in a browser.
-- If JavaScript is edited, check the browser console for data loading, parsing, or embedding errors.
-- There are no project build or test scripts in this repository by default.
+Before presenting results:
+
+- Validate null or missing values.
+- Check referential integrity across dimension tables.
+- Detect anomalous values, including unusual price drops and potential stock issues.
+- Explain any limitations that may affect the reliability of the analysis.
+
+## Validation
+
+- Run `node evals/harness.js` after changing dashboard calculations; it checks the Total Sales month-over-month scenarios without a browser or extra packages.
+- For visual or interaction changes, serve the repository locally and inspect the dashboard in a browser. See [README.md](README.md#essential-commands) for the Windows and Unix-like commands.
+- This repository has no general build or package-install step. Follow the relevant exercise in [docs/](docs/) for its documented workflow.
+
+## Agent Resources
+
+- Use `frontend-design` for interface and visual-design decisions: [.agents/skills/frontend-design/SKILL.md](.agents/skills/frontend-design/SKILL.md).
+- Use `kpi-dashboard-design` for KPI selection, metric consistency, and dashboard visualization: [.agents/skills/kpi-dashboard-design/SKILL.md](.agents/skills/kpi-dashboard-design/SKILL.md).
+- The configured `supabase` and `confluence` MCP servers are documented in [.vscode/mcp.json](.vscode/mcp.json). Use MCPs for authorized external data or publishing actions; use skills for domain guidance. Never copy credentials from MCP configuration into source files or chat.
+- OpenSpec requirements and changes live in [openspec/](openspec/); see [docs/exercises/exercise-04-sdd.md](docs/exercises/exercise-04-sdd.md) and [docs/exercises/exercise-05-implementation-evals.md](docs/exercises/exercise-05-implementation-evals.md) for the documented workflow.

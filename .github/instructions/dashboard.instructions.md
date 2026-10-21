@@ -10,36 +10,33 @@ These rules are mandatory for every dashboard, analysis, and generated document 
 
 ## Dashboard Data Source
 
-- Do not use the `resources/` directory or any CSV file as a data source after the initial CSV learning exercise.
-- Retrieve all data required by the dashboard from the configured Supabase MCP in read-only mode.
-- Inspect and validate the Supabase schemas and tables before downloading data, calculating KPIs, or embedding a validated snapshot in the self-contained HTML dashboard.
-- Never include Supabase credentials or a runtime database connection in the generated HTML.
-- If the Supabase MCP is unavailable or the required data cannot be retrieved, stop and report the limitation. Do not fall back to CSV files, sample data, or invented values.
+- Use Supabase MCP in read-only mode as the only data source. After the learning exercise, do not use CSV files or `resources/` as a data source or fallback.
+- Validate the schemas and tables before using them, and identify the source tables for each metric.
+- Never embed credentials or a live database connection in the dashboard, source examples, or generated documents. Embed only a validated, privacy-safe data snapshot.
+- If Supabase is unavailable, stop and report the limitation. Do not fall back to CSV, sample, or invented data.
 
 ## Privacy and GDPR
 
-- Never display or expose first name, last name, email address, date of birth, postal code, or any field that can identify a natural person.
-- This prohibition applies to charts, KPIs, tooltips, labels, legends, filters, tables, embedded HTML or JavaScript data, source-code examples, and Confluence documentation.
-- User-profile analysis may use only anonymized attributes such as `segmento_cliente`, `genero`, and `comunidad_autonoma`.
-- Document in the dashboard source code why first and last names are intentionally excluded from the analysis.
+- Never expose customer or data-subject first names, last names, email addresses, dates of birth, postal codes, or other identifying fields anywhere, including charts, KPIs, tooltips, labels, filters, tables, embedded JavaScript data, source examples, and Confluence documentation.
+- Limit user-profile analysis to `segmento_cliente`, `genero`, and `comunidad_autonoma`. Do not retrieve or embed identifying attributes merely to hide them in the interface.
+- Document in source code why names are excluded: they identify individuals and are unnecessary for aggregate sales analysis.
 
 ## Data-Quality Gate
 
-- Validate every required source table separately before generating dashboard or documentation output.
-- Record a clear `PASS` or `FAIL` result for every table.
-- Check join cardinality by comparing row counts before and after each join.
-- Abort generation if a join unexpectedly increases the row count or duplicates sales records.
-- Report failed checks and limitations instead of producing potentially misleading KPIs.
+- Validate each required table separately and report an explicit PASS or FAIL result for each table before calculating KPIs. Check missing values, referential integrity, and anomalous values.
+- Check expected join cardinality and row counts before and after every join, including whether sales records remain unique at their intended grain.
+- Abort if a join duplicates sales or inflates row counts. Report the failed checks instead of producing misleading KPIs.
+- If any required table fails validation, stop the affected analysis and report the failure before presenting results.
 
 ## Confluence Publishing
 
-- Always create dashboard documentation as a child page of Confluence page ID `1430576442`, using space key `IADEIADATAENGINEERS`.
-- Use exactly this title pattern: `{creator name} - Informe ventas`.
-- Never create the report at the Confluence root or under another parent page.
+- Create documentation only as a child of page ID `1430576442` in space `IADEIADATAENGINEERS`.
+- Use the title exactly `{creator name} - Informe ventas`, replacing `{creator name}` with the document creator's name, not a name retrieved from customer data.
+- Never publish at the space root or under another parent. Confirm the parent, space, and title before publishing.
 
 ## Project Constraints
 
-- Keep the dashboard as a single self-contained HTML file unless a different technical approach is explicitly approved.
-- Do not introduce external dependencies unless explicitly approved.
+- Keep the dashboard as a single self-contained HTML file with an embedded, validated, privacy-safe data snapshot.
+- Do not introduce external dependencies without explicit approval.
 - Prefer simple, business-readable dashboards with interactive filtering.
 - Report data-quality limitations before making recommendations.

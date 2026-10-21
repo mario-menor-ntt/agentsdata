@@ -18,10 +18,11 @@
       "type": "stdio",
       "command": "uvx",
       "args": [
-        "mcp-atlassian==0.21.1"
+        "--python",
+        "3.12",
+        "mcp-atlassian"
       ],
       "env": {
-        "UV_DEFAULT_INDEX": "https://pypi.org/simple",
         "CONFLUENCE_URL": "https://umane.emeal.nttdata.com/confluence",
         "CONFLUENCE_PERSONAL_TOKEN": "${input:confluence-token}"
       }
